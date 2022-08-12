@@ -12,6 +12,7 @@ class ParkStepper(StepperTuner):
     
     def move_to_cold_landing(self):
         steps = caget(self.nsteps_park_pv)
+        print(f"Moving {steps} steps")
         self.move(steps)
 
 
@@ -27,13 +28,28 @@ class ParkCavity(Cavity):
         self.freq_stop_pv: str = chirp_prefix + "FREQ_STOP"
     
     def move_to_cold_landing(self):
-        self.set_chirp_range(200000)
-        self.setup_tuning()
+        curr_detune = caget(self.detune_best_PV.pvname)
+        if curr_detune and abs(curr_detune) < 150000:
+            self.set_chirp_range(200000)
+        else:
+            self.set_chirp_range(400000)
+        
+        print("Setting tune config to Other")
         caput(self.tune_config_pv, TUNE_CONFIG_OTHER_VALUE, wait=True)
-        self.steppertuner.move_to_cold_landing()
-        caput(self.tune_config_pv, TUNE_CONFIG_COLD_VALUE)
-        cold_landing_freq = caget(self.detune_best_PV.pvname)
-        caput(self.df_cold_pv, cold_landing_freq)
+        # print("Resetting stepper total count")
+        # caput(self.steppertuner.reset_tot_pv.pvname, 1)
+        
+        df_cold = caget(self.df_cold_pv)
+        if df_cold:
+            print(f"Tuning to {df_cold}")
+            self.auto_tune(des_detune=df_cold, config_val=TUNE_CONFIG_COLD_VALUE)
+        else:
+            self.setup_tuning()
+            self.steppertuner.move_to_cold_landing()
+            caput(self.tune_config_pv, TUNE_CONFIG_COLD_VALUE)
+        
+        # steps_to_cold = caget(self.steppertuner.step_tot_pv.pvname)
+        # caput(self.steppertuner.nsteps_park_pv, steps_to_cold)
     
     def set_chirp_range(self, offset: int):
         offset = abs(offset)

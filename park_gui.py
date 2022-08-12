@@ -1,27 +1,32 @@
 from typing import Dict
 
-from PyQt5.QtCore import QObject, QThread
-from PyQt5.QtWidgets import QGridLayout, QGroupBox, QLabel, QPushButton, QVBoxLayout, QWidget
-from epics import camonitor, camonitor_clear
+from PyQt5.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
+from PyQt5.QtWidgets import QFormLayout, QGridLayout, QGroupBox, QLabel, QPushButton, QVBoxLayout, QWidget
+from epics import camonitor, camonitor_clear, caput
 from lcls_tools.superconducting.scLinac import ALL_CRYOMODULES
 from pydm import Display
 from pydm.widgets import PyDMLabel
-from qtpy.QtCore import Signal, Slot
 
 from park_linac import PARK_CRYOMODULES, ParkCavity
 
 
 class ParkWorker(QThread):
-    status = Signal(str)
-    finished = Signal(str)
-    error = Signal(str)
+    status = pyqtSignal(str)
+    finished = pyqtSignal(str)
+    error = pyqtSignal(str)
     
     def __init__(self, cavity: ParkCavity, label: QLabel):
         super().__init__()
         self.cavity = cavity
         self.status.connect(label.setText)
+        self.status.connect(print)
         self.finished.connect(label.setText)
+        self.finished.connect(print)
         self.error.connect(label.setText)
+        self.error.connect(print)
+        
+        self.finished.connect(self.deleteLater)
+        self.error.connect(self.deleteLater)
     
     def run(self) -> None:
         self.status.emit("Moving to cold landing")
@@ -30,31 +35,56 @@ class ParkWorker(QThread):
 
 
 class CavityObject(QObject):
-    clear_detune_callback_signal: Signal = Signal(bool)
-    expand_chirp_signal: Signal = Signal(bool)
+    clear_detune_callback_signal: pyqtSignal = pyqtSignal(bool)
+    expand_chirp_signal: pyqtSignal = pyqtSignal(bool)
     
-    def __init__(self, cm: str, num: int):
-        super().__init__()
+    def __init__(self, cm: str, num: int, parent):
+        super().__init__(parent=parent)
         self.cm_name = cm
         self.num = num
         self._cavity: ParkCavity = None
         self.label = QLabel("Ready")
         
+        readbacks: QFormLayout = QFormLayout()
+        
         self.detune_readback: PyDMLabel = PyDMLabel(init_channel=self.cavity.detune_best_PV.pvname)
         self.detune_readback.alarmSensitiveContent = True
         self.detune_readback.showUnits = True
         
-        self.go_button = QPushButton("Move to Cold Landing")
+        park_steps: PyDMLabel = PyDMLabel(init_channel=self.cavity.steppertuner.nsteps_park_pv)
+        park_steps.alarmSensitiveContent = True
+        park_steps.showUnits = True
+        
+        freq_cold: PyDMLabel = PyDMLabel(init_channel=self.cavity.df_cold_pv)
+        freq_cold.alarmSensitiveContent = True
+        freq_cold.showUnits = True
+        
+        step_readback: PyDMLabel = PyDMLabel(init_channel=self.cavity.steppertuner.step_tot_pv.pvname)
+        step_readback.alarmSensitiveContent = True
+        step_readback.showUnits = True
+        
+        readbacks.addRow("Live Detune", self.detune_readback)
+        readbacks.addRow("Steps to Park", park_steps)
+        readbacks.addRow("Cold Landing Detune", freq_cold)
+        readbacks.addRow("Live Total Step Count", step_readback)
+        
+        self.go_button: QPushButton = QPushButton("Move to Cold Landing")
+        self.go_button.clicked.connect(self.launch_worker)
+        
+        self.abort_button: QPushButton = QPushButton("Abort")
+        self.abort_button.clicked.connect(self.kill_worker)
+        
         self.groupbox = QGroupBox(f"Cavity {num}")
-        vlayout = QVBoxLayout()
-        vlayout.addWidget(self.go_button)
-        vlayout.addWidget(self.detune_readback)
-        vlayout.addWidget(self.label)
-        self.groupbox.setLayout(vlayout)
+        self.vlayout = QVBoxLayout()
+        self.vlayout.addWidget(self.go_button)
+        self.vlayout.addLayout(readbacks)
+        self.vlayout.addWidget(self.label)
+        self.vlayout.addWidget(self.abort_button)
+        
+        self.groupbox.setLayout(self.vlayout)
         
         self.park_worker: ParkWorker = None
         
-        self.go_button.clicked.connect(self.launch_worker)
         self.clear_detune_callback_signal.connect(self.clear_callback)
         self.expand_chirp_signal.connect(self.expand_chirp)
     
@@ -64,40 +94,46 @@ class CavityObject(QObject):
             self._cavity = PARK_CRYOMODULES[self.cm_name].cavities[self.num]
         return self._cavity
     
-    @Slot()
+    def kill_worker(self):
+        print("Aborting stepper move request")
+        caput(self.cavity.steppertuner.abort_pv.pvname, 1)
+        self.park_worker.error.emit("Aborting")
+        self.park_worker.terminate()
+    
     def launch_worker(self):
-        camonitor(self.cavity.detune_best_PV, callback=self.chirp_callback)
+        print("launching worker")
         self.park_worker = ParkWorker(cavity=self.cavity, label=self.label)
         self.park_worker.start()
+        camonitor(self.cavity.detune_best_PV.pvname, callback=self.chirp_callback)
     
-    @Slot()
     def clear_callback(self):
-        camonitor_clear(self.cavity.detune_best_PV)
+        camonitor_clear(self.cavity.detune_best_PV.pvname)
     
-    @Slot(bool)
+    @pyqtSlot(bool)
     def expand_chirp(self):
         self.cavity.set_chirp_range(400000)
         self.clear_detune_callback_signal.emit(True)
     
-    @Slot()
     def chirp_callback(self, value, **kwargs):
         if abs(value) > 150000:
             self.expand_chirp_signal.emit(True)
 
 
 class CryomoduleObject(QObject):
-    def __init__(self, name: str):
-        super().__init__()
+    def __init__(self, name: str, parent):
+        super().__init__(parent=parent)
         self.cav_objects: Dict[int, CavityObject] = {}
         
         self.go_button: QPushButton = QPushButton("Move to Cold Landing")
+        self.go_button.clicked.connect(self.move_cavities_to_cold)
+        
         self.page: QWidget = QWidget()
         self.groupbox: QGroupBox = QGroupBox()
         all_cav_layout: QGridLayout = QGridLayout()
         self.groupbox.setLayout(all_cav_layout)
         
         for i in range(1, 9):
-            cav_obj = CavityObject(cm=name, num=i)
+            cav_obj = CavityObject(cm=name, num=i, parent=parent)
             self.cav_objects[i] = cav_obj
             all_cav_layout.addWidget(cav_obj.groupbox,
                                      0 if i in range(1, 5) else 1,
@@ -108,9 +144,8 @@ class CryomoduleObject(QObject):
         vlayout.addWidget(self.groupbox)
         
         self.page.setLayout(vlayout)
-        self.go_button.clicked.connect(self.move_cavities_to_cold)
     
-    @Slot()
+    @pyqtSlot()
     def move_cavities_to_cold(self):
         for cav_obj in self.cav_objects.values():
             cav_obj.launch_worker()
@@ -121,7 +156,7 @@ class ParkGUI(Display):
         super().__init__(parent=parent, args=args)
         
         for cm_name in ALL_CRYOMODULES:
-            cm_obj = CryomoduleObject(name=cm_name)
+            cm_obj = CryomoduleObject(name=cm_name, parent=self)
             self.ui.tabWidget.addTab(cm_obj.page, cm_name)
     
     def ui_filename(self):
