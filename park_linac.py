@@ -9,13 +9,6 @@ class ParkStepper(StepperTuner):
     def __init__(self, cavity):
         super().__init__(cavity)
         self._nsteps_park_pv: PV = None
-        self._reset_signed_pv: PV = None
-    
-    @property
-    def reset_signed_pv(self):
-        if not self._reset_signed_pv:
-            self._reset_signed_pv = PV(self.pvPrefix + "TOTSGN_RESET")
-        return self._reset_signed_pv
     
     @property
     def nsteps_park_pv(self) -> PV:
