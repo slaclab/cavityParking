@@ -59,7 +59,7 @@ class CavityObject(QObject):
         freq_cold.alarmSensitiveContent = True
         freq_cold.showUnits = True
         
-        step_readback: PyDMLabel = PyDMLabel(init_channel=self.cavity.steppertuner.step_tot_pv.pvname)
+        step_readback: PyDMLabel = PyDMLabel(init_channel=self.cavity.steppertuner.step_signed_pv.pvname)
         step_readback.alarmSensitiveContent = True
         step_readback.showUnits = True
         

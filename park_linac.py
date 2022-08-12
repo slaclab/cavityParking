@@ -53,8 +53,8 @@ class ParkCavity(Cavity):
         
         print("Setting tune config to Other")
         caput(self.tune_config_pv, TUNE_CONFIG_OTHER_VALUE, wait=True)
-        print("Resetting stepper total count")
-        self.steppertuner.reset_tot_pv.put(1)
+        print("Resetting stepper signed count")
+        self.steppertuner.reset_signed_pv.put(1)
         
         df_cold = self.df_cold_pv.value
         if df_cold:
