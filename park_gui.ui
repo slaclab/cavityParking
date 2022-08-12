@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Cavity Parking</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -20,7 +20,7 @@
       <string notr="true">background-color: rgb(175, 217, 248)</string>
      </property>
      <property name="text">
-      <string>PARKING GUI</string>
+      <string/>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
