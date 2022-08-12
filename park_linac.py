@@ -14,7 +14,6 @@ class ParkStepper(StepperTuner):
     def nsteps_park_pv(self) -> PV:
         if not self._nsteps_park_pv:
             self._nsteps_park_pv = PV(self.pvPrefix + "NSTEPS_PARK")
-            self._nsteps_park_pv.connect()
         return self._nsteps_park_pv
     
     def move_to_cold_landing(self):
@@ -38,7 +37,6 @@ class ParkCavity(Cavity):
     def df_cold_pv(self) -> PV:
         if not self._df_cold_pv:
             self._df_cold_pv = PV(self.pvPrefix + "DF_COLD")
-            self._df_cold_pv.connect()
         return self._df_cold_pv
     
     def move_to_cold_landing(self):
