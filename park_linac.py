@@ -58,7 +58,7 @@ class ParkCavity(Cavity):
             self.set_chirp_range(200000)
         
         print("Setting tune config to Other")
-        caput(self.tune_config_pv, TUNE_CONFIG_OTHER_VALUE, wait=True)
+        self.tune_config_pv.put(TUNE_CONFIG_OTHER_VALUE)
         
         if not count_current:
             print("Resetting stepper signed count")
