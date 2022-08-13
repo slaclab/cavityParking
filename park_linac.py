@@ -60,7 +60,8 @@ class ParkCavity(Cavity):
         
         if not count_current:
             print("Resetting stepper signed count")
-            self.steppertuner.reset_signed_pv.put(1, wait=True)
+            while self.steppertuner.step_signed_pv.value != 0:
+                self.steppertuner.reset_signed_pv.put(1, wait=True)
         
         df_cold = self.df_cold_pv.value
         if df_cold:
