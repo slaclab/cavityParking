@@ -72,6 +72,10 @@ class ParkCavity(Cavity):
             self.steppertuner.move_to_cold_landing(count_current=count_current)
             caput(self.tune_config_pv, TUNE_CONFIG_COLD_VALUE)
         
+        print("Turning cavity and SSA off")
+        self.turnOff()
+        self.ssa.turnOff()
+        
         # steps_to_cold = caget(self.steppertuner.step_tot_pv.pvname)
         # caput(self.steppertuner.nsteps_park_pv, steps_to_cold)
     
