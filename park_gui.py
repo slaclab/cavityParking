@@ -1,7 +1,7 @@
 from typing import Dict
 
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
-from PyQt5.QtWidgets import QFormLayout, QGridLayout, QGroupBox, QLabel, QPushButton, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QCheckBox, QFormLayout, QGridLayout, QGroupBox, QLabel, QPushButton, QVBoxLayout, QWidget
 from epics import camonitor, camonitor_clear, caput
 from lcls_tools.superconducting.scLinac import ALL_CRYOMODULES
 from pydm import Display
@@ -15,7 +15,7 @@ class ParkWorker(QThread):
     finished = pyqtSignal(str)
     error = pyqtSignal(str)
     
-    def __init__(self, cavity: ParkCavity, label: QLabel):
+    def __init__(self, cavity: ParkCavity, label: QLabel, count_current: bool):
         super().__init__()
         self.cavity = cavity
         self.status.connect(label.setText)
@@ -27,10 +27,12 @@ class ParkWorker(QThread):
         
         self.finished.connect(self.deleteLater)
         self.error.connect(self.deleteLater)
+        
+        self.count_current = count_current
     
     def run(self) -> None:
         self.status.emit("Moving to cold landing")
-        self.cavity.move_to_cold_landing()
+        self.cavity.move_to_cold_landing(count_current=self.count_current)
         self.finished.emit("Cavity at cold landing")
 
 
@@ -74,8 +76,12 @@ class CavityObject(QObject):
         self.abort_button: QPushButton = QPushButton("Abort")
         self.abort_button.clicked.connect(self.kill_worker)
         
+        self.count_signed_steps: QCheckBox = QCheckBox("Count current steps toward total")
+        self.count_signed_steps.setChecked(False)
+        
         self.groupbox = QGroupBox(f"Cavity {num}")
         self.vlayout = QVBoxLayout()
+        self.vlayout.addWidget(self.count_signed_steps)
         self.vlayout.addWidget(self.go_button)
         self.vlayout.addLayout(readbacks)
         self.vlayout.addWidget(self.label)
@@ -102,7 +108,8 @@ class CavityObject(QObject):
     
     def launch_worker(self):
         print("launching worker")
-        self.park_worker = ParkWorker(cavity=self.cavity, label=self.label)
+        self.park_worker = ParkWorker(cavity=self.cavity, label=self.label,
+                                      count_current=self.count_signed_steps.isChecked())
         self.park_worker.start()
         camonitor(self.cavity.detune_best_PV.pvname, callback=self.chirp_callback)
     

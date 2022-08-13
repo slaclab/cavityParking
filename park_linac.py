@@ -16,10 +16,14 @@ class ParkStepper(StepperTuner):
             self._nsteps_park_pv = PV(self.pvPrefix + "NSTEPS_PARK")
         return self._nsteps_park_pv
     
-    def move_to_cold_landing(self):
-        steps = self.nsteps_park_pv.value
+    def move_to_cold_landing(self, count_current: bool):
+        recorded_steps = self.nsteps_park_pv.value
+        if count_current:
+            steps = recorded_steps - self.step_signed_pv.value
+        else:
+            steps = recorded_steps
         print(f"Moving {steps} steps")
-        self.move(steps)
+        self.move(steps, maxSteps=5000000)
 
 
 class ParkCavity(Cavity):
@@ -39,7 +43,7 @@ class ParkCavity(Cavity):
             self._df_cold_pv = PV(self.pvPrefix + "DF_COLD")
         return self._df_cold_pv
     
-    def move_to_cold_landing(self):
+    def move_to_cold_landing(self, count_current: bool):
         
         if self.detune_best_PV.severity != 3:
             curr_detune = self.detune_best_PV.value
@@ -53,8 +57,10 @@ class ParkCavity(Cavity):
         
         print("Setting tune config to Other")
         caput(self.tune_config_pv, TUNE_CONFIG_OTHER_VALUE, wait=True)
-        print("Resetting stepper signed count")
-        self.steppertuner.reset_signed_pv.put(1, wait=True)
+        
+        if not count_current:
+            print("Resetting stepper signed count")
+            self.steppertuner.reset_signed_pv.put(1, wait=True)
         
         df_cold = self.df_cold_pv.value
         if df_cold:
@@ -63,7 +69,7 @@ class ParkCavity(Cavity):
         else:
             print("No cold landing frequency recorded, moving npark steps instead")
             self.setup_tuning()
-            self.steppertuner.move_to_cold_landing()
+            self.steppertuner.move_to_cold_landing(count_current=count_current)
             caput(self.tune_config_pv, TUNE_CONFIG_COLD_VALUE)
         
         # steps_to_cold = caget(self.steppertuner.step_tot_pv.pvname)
