@@ -67,7 +67,7 @@ class CavityObject(QObject):
         step_readback.alarmSensitiveContent = True
         step_readback.showUnits = True
         
-        config_label = PyDMLabel(init_channel=self.cavity.tune_config_pv)
+        config_label = PyDMLabel(init_channel=self.cavity.tune_config_pv.pvname)
         config_label.alarmSensitiveContent = True
         config_label.showUnits = True
         
