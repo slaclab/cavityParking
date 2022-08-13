@@ -41,6 +41,12 @@ class ParkCavity(Cavity):
     
     def move_to_cold_landing(self, count_current: bool):
         
+        if self.tune_config_pv.value == TUNE_CONFIG_COLD_VALUE:
+            print("Cavity at cold landing")
+            print("Turning cavity and SSA off")
+            self.turnOff()
+            self.ssa.turnOff()
+        
         if self.detune_best_PV.severity != 3:
             curr_detune = self.detune_best_PV.value
             if curr_detune and abs(curr_detune) < 150000:
