@@ -69,10 +69,15 @@ class CavityObject(QObject):
         step_readback.alarmSensitiveContent = True
         step_readback.showUnits = True
         
+        config_label = PyDMLabel(init_channel=self.cavity.tune_config_pv)
+        config_label.alarmSensitiveContent = True
+        config_label.showUnits = True
+        
         readbacks.addRow("Live Detune", self.detune_readback)
         readbacks.addRow("Steps to Park", park_steps)
         readbacks.addRow("Cold Landing Detune", freq_cold)
         readbacks.addRow("Live Total Step Count", step_readback)
+        readbacks.addRow("Tune Config", config_label)
         
         self.go_button: QPushButton = QPushButton("Move to Cold Landing")
         self.go_button.clicked.connect(self.launch_worker)
