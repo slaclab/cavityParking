@@ -32,10 +32,6 @@ class ParkCavity(Cavity):
                  stepperClass=ParkStepper, piezoClass=Piezo):
         super().__init__(cavityNum, rackObject, stepperClass=ParkStepper)
         self._df_cold_pv: PV = None
-        chirp_prefix = self.pvPrefix + "CHIRP:"
-        
-        self.freq_start_pv: str = chirp_prefix + "FREQ_START"
-        self.freq_stop_pv: str = chirp_prefix + "FREQ_STOP"
     
     @property
     def df_cold_pv(self) -> PV:
@@ -80,13 +76,6 @@ class ParkCavity(Cavity):
         
         # steps_to_cold = caget(self.steppertuner.step_tot_pv.pvname)
         # caput(self.steppertuner.nsteps_park_pv, steps_to_cold)
-    
-    def set_chirp_range(self, offset: int):
-        offset = abs(offset)
-        print(f"Setting chirp range for cm{self.cryomodule.name} cavity {self.number} to +/- {offset} Hz")
-        caput(self.freq_start_pv, -offset, wait=True)
-        caput(self.freq_stop_pv, offset, wait=True)
-        print(f"Chirp range set for cm{self.cryomodule.name} cavity {self.number}")
 
 
 PARK_CRYOMODULES: Dict[str, Cryomodule] = CryoDict(cavityClass=ParkCavity,

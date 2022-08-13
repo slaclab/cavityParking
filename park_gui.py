@@ -2,7 +2,7 @@ from typing import Dict
 
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QCheckBox, QFormLayout, QGridLayout, QGroupBox, QLabel, QPushButton, QVBoxLayout, QWidget
-from epics import camonitor, camonitor_clear, caput
+from epics import caput
 from lcls_tools.superconducting.scLinac import ALL_CRYOMODULES
 from lcls_tools.superconducting.scLinacUtils import StepperError
 from pydm import Display
@@ -41,8 +41,6 @@ class ParkWorker(QThread):
 
 
 class CavityObject(QObject):
-    clear_detune_callback_signal: pyqtSignal = pyqtSignal(bool)
-    expand_chirp_signal: pyqtSignal = pyqtSignal(bool)
     
     def __init__(self, cm: str, num: int, parent):
         super().__init__(parent=parent)
@@ -99,9 +97,6 @@ class CavityObject(QObject):
         self.groupbox.setLayout(self.vlayout)
         
         self.park_worker: ParkWorker = None
-        
-        self.clear_detune_callback_signal.connect(self.clear_callback)
-        self.expand_chirp_signal.connect(self.expand_chirp)
     
     @property
     def cavity(self):
@@ -120,19 +115,6 @@ class CavityObject(QObject):
         self.park_worker = ParkWorker(cavity=self.cavity, label=self.label,
                                       count_current=self.count_signed_steps.isChecked())
         self.park_worker.start()
-        camonitor(self.cavity.detune_best_PV.pvname, callback=self.chirp_callback)
-    
-    def clear_callback(self):
-        camonitor_clear(self.cavity.detune_best_PV.pvname)
-    
-    @pyqtSlot(bool)
-    def expand_chirp(self):
-        self.cavity.set_chirp_range(400000)
-        self.clear_detune_callback_signal.emit(True)
-    
-    def chirp_callback(self, value, **kwargs):
-        if abs(value) > 150000:
-            self.expand_chirp_signal.emit(True)
 
 
 class CryomoduleObject(QObject):
