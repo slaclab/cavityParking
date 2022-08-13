@@ -4,6 +4,7 @@ from PyQt5.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QCheckBox, QFormLayout, QGridLayout, QGroupBox, QLabel, QPushButton, QVBoxLayout, QWidget
 from epics import camonitor, camonitor_clear, caput
 from lcls_tools.superconducting.scLinac import ALL_CRYOMODULES
+from lcls_tools.superconducting.scLinacUtils import StepperError
 from pydm import Display
 from pydm.widgets import PyDMLabel
 
@@ -32,8 +33,11 @@ class ParkWorker(QThread):
     
     def run(self) -> None:
         self.status.emit("Moving to cold landing")
-        self.cavity.move_to_cold_landing(count_current=self.count_current)
-        self.finished.emit("Cavity at cold landing")
+        try:
+            self.cavity.move_to_cold_landing(count_current=self.count_current)
+            self.finished.emit("Cavity at cold landing")
+        except StepperError as e:
+            self.error.emit(str(e))
 
 
 class CavityObject(QObject):

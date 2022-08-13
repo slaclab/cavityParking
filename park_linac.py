@@ -2,7 +2,7 @@ from typing import Dict
 
 from epics import PV, caput
 from lcls_tools.superconducting.scLinac import (Cavity, CryoDict, Cryomodule, Piezo, SSA, StepperTuner)
-from lcls_tools.superconducting.scLinacUtils import (TUNE_CONFIG_COLD_VALUE, TUNE_CONFIG_OTHER_VALUE)
+from lcls_tools.superconducting.scLinacUtils import (MAX_STEPPER_SPEED, TUNE_CONFIG_COLD_VALUE, TUNE_CONFIG_OTHER_VALUE)
 
 
 class ParkStepper(StepperTuner):
@@ -23,7 +23,7 @@ class ParkStepper(StepperTuner):
         else:
             steps = recorded_steps
         print(f"Moving {steps} steps")
-        self.move(steps, maxSteps=5000000)
+        self.move(steps, maxSteps=5000000, speed=MAX_STEPPER_SPEED)
 
 
 class ParkCavity(Cavity):
