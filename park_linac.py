@@ -1,6 +1,6 @@
 from typing import Dict
 
-from epics import PV, caput
+from epics import PV
 from lcls_tools.superconducting.scLinac import (Cavity, CryoDict, Cryomodule, Piezo, SSA, StepperTuner)
 from lcls_tools.superconducting.scLinacUtils import (MAX_STEPPER_SPEED, TUNE_CONFIG_COLD_VALUE, TUNE_CONFIG_OTHER_VALUE)
 
@@ -73,7 +73,7 @@ class ParkCavity(Cavity):
             print("No cold landing frequency recorded, moving npark steps instead")
             self.setup_tuning()
             self.steppertuner.move_to_cold_landing(count_current=count_current)
-            caput(self.tune_config_pv, TUNE_CONFIG_COLD_VALUE)
+            self.tune_config_pv.put(TUNE_CONFIG_COLD_VALUE)
             self.df_cold_pv.put(self.detune_best_PV.value)
         
         print("Turning cavity and SSA off")
