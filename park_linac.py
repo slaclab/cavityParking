@@ -2,7 +2,8 @@ from typing import Dict
 
 from epics import PV
 from lcls_tools.superconducting.scLinac import (Cavity, CryoDict, Cryomodule, Piezo, SSA, StepperTuner)
-from lcls_tools.superconducting.scLinacUtils import (MAX_STEPPER_SPEED, TUNE_CONFIG_COLD_VALUE, TUNE_CONFIG_OTHER_VALUE)
+from lcls_tools.superconducting.scLinacUtils import (MAX_STEPPER_SPEED, StepperError, TUNE_CONFIG_COLD_VALUE,
+                                                     TUNE_CONFIG_OTHER_VALUE)
 
 
 class ParkStepper(StepperTuner):
@@ -39,6 +40,10 @@ class ParkCavity(Cavity):
             self._df_cold_pv = PV(self.pvPrefix + "DF_COLD")
         return self._df_cold_pv
     
+    def check_abort(self):
+        if self.steppertuner.abort_flag:
+            raise StepperError(f"Abort requested for CM{self.cryomodule.name} cavity {self.number} stepper tuner")
+    
     def move_to_cold_landing(self, count_current: bool):
         
         if self.tune_config_pv.value == TUNE_CONFIG_COLD_VALUE:
@@ -46,6 +51,8 @@ class ParkCavity(Cavity):
             print("Turning cavity and SSA off")
             self.turnOff()
             self.ssa.turnOff()
+        
+        self.check_abort()
         
         if self.detune_best_PV.severity != 3:
             curr_detune = self.detune_best_PV.value
@@ -57,6 +64,8 @@ class ParkCavity(Cavity):
         else:
             self.set_chirp_range(200000)
         
+        self.check_abort()
+        
         print("Setting tune config to Other")
         self.tune_config_pv.put(TUNE_CONFIG_OTHER_VALUE)
         
@@ -64,6 +73,8 @@ class ParkCavity(Cavity):
             print("Resetting stepper signed count")
             while self.steppertuner.step_signed_pv.value != 0:
                 self.steppertuner.reset_signed_pv.put(1, wait=True)
+        
+        self.check_abort()
         
         df_cold = self.df_cold_pv.value
         if df_cold:

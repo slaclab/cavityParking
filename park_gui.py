@@ -1,43 +1,33 @@
 from typing import Dict
 
-from PyQt5.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QObject, QRunnable, QThreadPool, pyqtSlot
 from PyQt5.QtWidgets import QCheckBox, QFormLayout, QGridLayout, QGroupBox, QLabel, QPushButton, QVBoxLayout, QWidget
-from epics import caput
+from lcls_tools.common.pydm_tools.displayUtils import WorkerSignals
 from lcls_tools.superconducting.scLinac import ALL_CRYOMODULES
-from lcls_tools.superconducting.scLinacUtils import StepperError
+from lcls_tools.superconducting.scLinacUtils import StepperAbortError
 from pydm import Display
 from pydm.widgets import PyDMLabel
 
 from park_linac import PARK_CRYOMODULES, ParkCavity
 
 
-class ParkWorker(QThread):
-    status = pyqtSignal(str)
-    finished = pyqtSignal(str)
-    error = pyqtSignal(str)
-    
+class ColdWorker(QRunnable):
     def __init__(self, cavity: ParkCavity, label: QLabel, count_current: bool):
         super().__init__()
         self.cavity = cavity
-        self.status.connect(label.setText)
-        self.status.connect(print)
-        self.finished.connect(label.setText)
-        self.finished.connect(print)
-        self.error.connect(label.setText)
-        self.error.connect(print)
-        
-        self.finished.connect(self.deleteLater)
-        self.error.connect(self.deleteLater)
+        self.signals = WorkerSignals(label)
         
         self.count_current = count_current
     
+    @pyqtSlot()
     def run(self) -> None:
-        self.status.emit("Moving to cold landing")
+        self.signals.status.emit("Moving to cold landing")
         try:
             self.cavity.move_to_cold_landing(count_current=self.count_current)
-            self.finished.emit("Cavity at cold landing")
-        except StepperError as e:
-            self.error.emit(str(e))
+            self.signals.finished.emit("Cavity at cold landing")
+        except StepperAbortError as e:
+            self.cavity.steppertuner.abort_flag = False
+            self.signals.error.emit(str(e))
 
 
 class CavityObject(QObject):
@@ -95,8 +85,6 @@ class CavityObject(QObject):
         self.vlayout.addWidget(self.abort_button)
         
         self.groupbox.setLayout(self.vlayout)
-        
-        self.park_worker: ParkWorker = None
     
     @property
     def cavity(self):
@@ -106,15 +94,15 @@ class CavityObject(QObject):
     
     def kill_worker(self):
         print("Aborting stepper move request")
-        caput(self.cavity.steppertuner.abort_pv.pvname, 1)
-        self.park_worker.error.emit("Aborting")
-        self.park_worker.terminate()
+        self.cavity.steppertuner.abort_pv.put(1, wait=True)
+        self.cavity.steppertuner.abort_flag = True
     
     def launch_worker(self):
         print("launching worker")
-        self.park_worker = ParkWorker(cavity=self.cavity, label=self.label,
-                                      count_current=self.count_signed_steps.isChecked())
-        self.park_worker.start()
+        park_worker = ColdWorker(cavity=self.cavity, label=self.label,
+                                 count_current=self.count_signed_steps.isChecked())
+        self.parent().threadpool.start(park_worker)
+        print(f"Active thread count: {self.parent().threadpool.activeThreadCount()}")
 
 
 class CryomoduleObject(QObject):
@@ -152,6 +140,8 @@ class CryomoduleObject(QObject):
 class ParkGUI(Display):
     def __init__(self, parent=None, args=None):
         super().__init__(parent=parent, args=args)
+        self.threadpool = QThreadPool()
+        print(f"Max thread count: {self.threadpool.maxThreadCount()}")
         
         for cm_name in ALL_CRYOMODULES:
             cm_obj = CryomoduleObject(name=cm_name, parent=self)
