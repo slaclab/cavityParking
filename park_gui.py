@@ -66,6 +66,10 @@ class CavityObject(QObject):
         cold_steps.alarmSensitiveContent = True
         cold_steps.showUnits = True
         
+        park_steps: PyDMLabel = PyDMLabel(init_channel=self.cavity.steppertuner.nsteps_park.pvname)
+        park_steps.alarmSensitiveContent = True
+        park_steps.showUnits = True
+        
         freq_cold: PyDMLabel = PyDMLabel(init_channel=self.cavity.df_cold_pv.pvname)
         freq_cold.alarmSensitiveContent = True
         freq_cold.showUnits = True
@@ -80,6 +84,7 @@ class CavityObject(QObject):
         
         readbacks.addRow("Live Detune", self.detune_readback)
         readbacks.addRow("Steps to Cold Landing", cold_steps)
+        readbacks.addRow("Steps to Park", park_steps)
         readbacks.addRow("Cold Landing Detune", freq_cold)
         readbacks.addRow("Live Total Step Count", step_readback)
         readbacks.addRow("Tune Config", config_label)
