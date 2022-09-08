@@ -66,7 +66,7 @@ class CavityObject(QObject):
         cold_steps.alarmSensitiveContent = True
         cold_steps.showUnits = True
         
-        park_steps: PyDMLabel = PyDMLabel(init_channel=self.cavity.steppertuner.nsteps_park.pvname)
+        park_steps: PyDMLabel = PyDMLabel(init_channel=self.cavity.steppertuner.nsteps_park_pv.pvname)
         park_steps.alarmSensitiveContent = True
         park_steps.showUnits = True
         
