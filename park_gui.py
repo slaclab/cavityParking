@@ -16,7 +16,6 @@ class ColdWorker(QRunnable):
         super().__init__()
         self.cavity = cavity
         self.signals = WorkerSignals(label)
-        
         self.count_current = count_current
     
     @pyqtSlot()
@@ -25,6 +24,24 @@ class ColdWorker(QRunnable):
         try:
             self.cavity.move_to_cold_landing(count_current=self.count_current)
             self.signals.finished.emit("Cavity at cold landing")
+        except StepperAbortError as e:
+            self.cavity.steppertuner.abort_flag = False
+            self.signals.error.emit(str(e))
+
+
+class ParkWorker(QRunnable):
+    def __init__(self, cavity: ParkCavity, label: QLabel, count_current: bool):
+        super().__init__()
+        self.cavity = cavity
+        self.signals = WorkerSignals(label)
+        self.count_current = count_current
+    
+    @pyqtSlot()
+    def run(self) -> None:
+        self.signals.status.emit("Parking")
+        try:
+            self.cavity.park(self.count_current)
+            self.signals.finished.emit("Cavity Parked")
         except StepperAbortError as e:
             self.cavity.steppertuner.abort_flag = False
             self.signals.error.emit(str(e))
@@ -62,24 +79,35 @@ class CavityObject(QObject):
         config_label.showUnits = True
         
         readbacks.addRow("Live Detune", self.detune_readback)
-        readbacks.addRow("Steps to Park", park_steps)
+        readbacks.addRow("Steps to Cold Landing", park_steps)
         readbacks.addRow("Cold Landing Detune", freq_cold)
         readbacks.addRow("Live Total Step Count", step_readback)
         readbacks.addRow("Tune Config", config_label)
         
-        self.go_button: QPushButton = QPushButton("Move to Cold Landing")
-        self.go_button.clicked.connect(self.launch_worker)
+        self.cold_button: QPushButton = QPushButton("Move to Cold Landing")
+        self.cold_button.clicked.connect(self.launch_cold_worker)
+        self.cold_button.setToolTip("If 'Cold Landing Detune' is nonzero,"
+                                    " it will autotune to that frequency. "
+                                    "Else, it will blindly move 'Steps to Park' steps")
+        
+        self.park_button: QPushButton = QPushButton("Park")
+        self.park_button.clicked.connect(self.launch_park_worker)
+        self.park_button.setToolTip("This will move the tuner until the detune is 10kHz")
         
         self.abort_button: QPushButton = QPushButton("Abort")
         self.abort_button.clicked.connect(self.kill_worker)
         
         self.count_signed_steps: QCheckBox = QCheckBox("Count current steps toward total")
         self.count_signed_steps.setChecked(False)
+        self.count_signed_steps.setToolTip("If checked, program will not reset "
+                                           "the step count and will instead "
+                                           "subtract 'Live Total Step Count' from 'Steps to Park'")
         
         self.groupbox = QGroupBox(f"Cavity {num}")
         self.vlayout = QVBoxLayout()
         self.vlayout.addWidget(self.count_signed_steps)
-        self.vlayout.addWidget(self.go_button)
+        self.vlayout.addWidget(self.cold_button)
+        self.vlayout.addWidget(self.park_button)
         self.vlayout.addLayout(readbacks)
         self.vlayout.addWidget(self.label)
         self.vlayout.addWidget(self.abort_button)
@@ -97,9 +125,16 @@ class CavityObject(QObject):
         self.cavity.steppertuner.abort_pv.put(1, wait=True)
         self.cavity.steppertuner.abort_flag = True
     
-    def launch_worker(self):
-        print("launching worker")
-        park_worker = ColdWorker(cavity=self.cavity, label=self.label,
+    def launch_cold_worker(self):
+        print("launching cold landing worker")
+        cold_worker = ColdWorker(cavity=self.cavity, label=self.label,
+                                 count_current=self.count_signed_steps.isChecked())
+        self.parent().threadpool.start(cold_worker)
+        print(f"Active thread count: {self.parent().threadpool.activeThreadCount()}")
+    
+    def launch_park_worker(self):
+        print("launching park worker")
+        park_worker = ParkWorker(cavity=self.cavity, label=self.label,
                                  count_current=self.count_signed_steps.isChecked())
         self.parent().threadpool.start(park_worker)
         print(f"Active thread count: {self.parent().threadpool.activeThreadCount()}")
@@ -134,7 +169,7 @@ class CryomoduleObject(QObject):
     @pyqtSlot()
     def move_cavities_to_cold(self):
         for cav_obj in self.cav_objects.values():
-            cav_obj.launch_worker()
+            cav_obj.launch_cold_worker()
 
 
 class ParkGUI(Display):
