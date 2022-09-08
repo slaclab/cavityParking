@@ -12,6 +12,14 @@ from park_linac import PARK_CRYOMODULES
 ARCHIVER = Archiver("lcls")
 
 
+def move_steps_park(cm_list: List[str]):
+    for cm_name in cm_list:
+        cryomodule: Cryomodule = PARK_CRYOMODULES[cm_name]
+        for cavity in cryomodule.cavities.values():
+            cavity.steppertuner.nsteps_cold_pv.put(cavity.steppertuner.nsteps_park_pv.value,
+                                                   wait=True)
+
+
 def pull_cold_frequencies(start_time: datetime, end_time: datetime, cm_list: List[str]):
     for cm_name in cm_list:
         cryomodule: Cryomodule = PARK_CRYOMODULES[cm_name]
@@ -38,10 +46,6 @@ def pull_cold_frequencies(start_time: datetime, end_time: datetime, cm_list: Lis
 
 
 if __name__ == "__main__":
-    exclude = ["01", "H1", "H2", "05", "06", "16", "27", "28"]
+    exclude = ["H1", "H2"]
     cm_list = [item for item in ALL_CRYOMODULES if item not in exclude]
-    print(cm_list)
-    pull_cold_frequencies(start_time=datetime(year=2022, month=8, day=10, hour=23,
-                                              minute=57), cm_list=cm_list,
-                          end_time=datetime(year=2022, month=8, day=10, hour=23,
-                                            minute=58))
+    move_steps_park(cm_list)

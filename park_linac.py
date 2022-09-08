@@ -10,6 +10,7 @@ class ParkStepper(StepperTuner):
     def __init__(self, cavity):
         super().__init__(cavity)
         self._nsteps_park_pv: PV = None
+        self._nsteps_cold_pv: PV = None
     
     @property
     def nsteps_park_pv(self) -> PV:
@@ -17,8 +18,14 @@ class ParkStepper(StepperTuner):
             self._nsteps_park_pv = PV(self.pvPrefix + "NSTEPS_PARK")
         return self._nsteps_park_pv
     
+    @property
+    def nsteps_cold_pv(self) -> PV:
+        if not self._nsteps_cold_pv:
+            self._nsteps_cold_pv = PV(self.pvPrefix + "NSTEPS_COLD")
+        return self._nsteps_cold_pv
+    
     def move_to_cold_landing(self, count_current: bool):
-        recorded_steps = self.nsteps_park_pv.value
+        recorded_steps = self.nsteps_cold_pv.value
         if count_current:
             steps = recorded_steps - self.step_signed_pv.value
         else:
@@ -64,9 +71,15 @@ class ParkCavity(Cavity):
             self.ssa.turnOff()
             return
         
+        starting_config = self.tune_config_pv.value
+        
         self.setup(count_current)
         self.auto_tune(des_detune=10000, config_val=TUNE_CONFIG_OTHER_VALUE)
         self.park_pv.put(1, wait=True)
+        
+        if starting_config == TUNE_CONFIG_RESONANCE_VALUE:
+            print(f"Updating stored steps to park to current step count for {self}")
+            self.steppertuner.nsteps_park_pv.put(self.steppertuner.step_tot_pv.value)
     
     def move_to_cold_landing(self, count_current: bool):
         
@@ -86,7 +99,7 @@ class ParkCavity(Cavity):
             self.auto_tune(des_detune=df_cold, config_val=TUNE_CONFIG_COLD_VALUE)
             if starting_config == TUNE_CONFIG_RESONANCE_VALUE:
                 print(f"Updating stored steps to cold landing to current step count for {self}")
-                self.steppertuner.nsteps_park_pv.put(self.steppertuner.step_tot_pv.value)
+                self.steppertuner.nsteps_cold_pv.put(self.steppertuner.step_tot_pv.value)
         else:
             print("No cold landing frequency recorded, moving npark steps instead")
             self.setup_tuning()
