@@ -150,7 +150,7 @@ class CryomoduleObject(QObject):
         super().__init__(parent=parent)
         self.cav_objects: Dict[int, CavityObject] = {}
         
-        self.go_button: QPushButton = QPushButton("Move to Cold Landing")
+        self.go_button: QPushButton = QPushButton(f"Move all CM{name} cavities to Cold Landing")
         self.go_button.clicked.connect(self.move_cavities_to_cold)
         
         self.page: QWidget = QWidget()
