@@ -74,7 +74,8 @@ class ParkCavity(Cavity):
         starting_config = self.tune_config_pv.value
         
         self.setup(count_current)
-        self.auto_tune(des_detune=10000, config_val=TUNE_CONFIG_OTHER_VALUE)
+        if self.detune_best_PV.value < 10000:
+            self.auto_tune(des_detune=10000, config_val=TUNE_CONFIG_OTHER_VALUE)
         self.park_pv.put(1, wait=True)
         
         if starting_config == TUNE_CONFIG_RESONANCE_VALUE:
