@@ -4,7 +4,7 @@ from PyQt5.QtCore import QObject, QRunnable, QThreadPool, pyqtSlot
 from PyQt5.QtWidgets import QCheckBox, QFormLayout, QGridLayout, QGroupBox, QLabel, QPushButton, QVBoxLayout, QWidget
 from lcls_tools.common.pydm_tools.displayUtils import WorkerSignals
 from lcls_tools.superconducting.scLinac import ALL_CRYOMODULES
-from lcls_tools.superconducting.scLinacUtils import StepperAbortError
+from lcls_tools.superconducting.scLinacUtils import StepperAbortError, StepperError
 from pydm import Display
 from pydm.widgets import PyDMLabel
 
@@ -24,7 +24,7 @@ class ColdWorker(QRunnable):
         try:
             self.cavity.move_to_cold_landing(count_current=self.count_current)
             self.signals.finished.emit("Cavity at cold landing")
-        except StepperAbortError as e:
+        except (StepperAbortError, StepperError) as e:
             self.cavity.steppertuner.abort_flag = False
             self.signals.error.emit(str(e))
 
