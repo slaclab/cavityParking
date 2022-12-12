@@ -3,7 +3,7 @@ from typing import Dict
 from lcls_tools.common.pyepics_tools.pyepicsUtils import PV
 from lcls_tools.superconducting.scLinac import (Cavity, CryoDict, Cryomodule, Piezo, SSA, StepperTuner)
 from lcls_tools.superconducting.scLinacUtils import (MAX_STEPPER_SPEED, StepperAbortError, TUNE_CONFIG_COLD_VALUE,
-                                                     TUNE_CONFIG_OTHER_VALUE, TUNE_CONFIG_PARKED_VALUE,
+                                                     TUNE_CONFIG_PARKED_VALUE,
                                                      TUNE_CONFIG_RESONANCE_VALUE)
 
 PARK_DETUNE = 10000
@@ -65,44 +65,46 @@ class ParkCavity(Cavity):
         
         starting_config = self.tune_config_pv.get()
         
-        self.setup(count_current)
+        if not count_current:
+            print(f"Resetting {self} stepper signed count")
+            self.steppertuner.reset_signed_pv.put(1)
+        
         if self.detune_best_PV.get() < PARK_DETUNE:
             self.auto_tune(des_detune=PARK_DETUNE,
-                           config_val=TUNE_CONFIG_OTHER_VALUE)
-        self.tune_config_pv.put(TUNE_CONFIG_PARKED_VALUE, wait=True)
+                           config_val=TUNE_CONFIG_PARKED_VALUE,
+                           tolerance=1000, chirp_range=PARK_DETUNE + 50000)
         
         if starting_config == TUNE_CONFIG_RESONANCE_VALUE:
             print(f"Updating stored steps to park to current step count for {self}")
             self.steppertuner.nsteps_park_pv.put(self.steppertuner.step_tot_pv.get())
+        
+        print("Turning cavity and SSA off")
+        self.turnOff()
+        self.ssa.turnOff()
     
     def move_to_cold_landing(self, count_current: bool):
         
         if self.tune_config_pv.get() == TUNE_CONFIG_COLD_VALUE:
-            print("Cavity at cold landing")
-            print("Turning cavity and SSA off")
+            print(f"{self} at cold landing")
+            print(f"Turning {self} and SSA off")
             self.turnOff()
             self.ssa.turnOff()
             return
         
-        self.turnOff()
-        self.setup(count_current)
+        if not count_current:
+            print(f"Resetting {self} stepper signed count")
+            self.steppertuner.reset_signed_pv.put(0)
         
         df_cold = self.df_cold_pv.get()
         if df_cold:
             chirp_range = abs(df_cold) + 50000
-            self.set_chirp_range(chirp_range)
             print(f"Tuning {self} to {df_cold} Hz")
-            starting_config = self.tune_config_pv.get()
             self.auto_tune(des_detune=df_cold, config_val=TUNE_CONFIG_COLD_VALUE,
                            chirp_range=chirp_range, tolerance=1000)
-            if starting_config == TUNE_CONFIG_RESONANCE_VALUE:
-                print(f"Updating stored steps to cold landing to current step count for {self}")
-                self.steppertuner.nsteps_cold_pv.put(self.steppertuner.step_tot_pv.get())
         else:
             print("No cold landing frequency recorded, moving npark steps instead")
-            self.setup_tuning()
             abs_est_detune = abs(self.steppertuner.steps_cold_landing_pv.get() / self.steps_per_hz)
-            self.set_chirp_range(abs_est_detune + 50000)
+            self.setup_tuning(chirp_range=abs_est_detune + 50000)
             self.steppertuner.move_to_cold_landing(count_current=count_current)
             self.tune_config_pv.put(TUNE_CONFIG_COLD_VALUE)
             self.df_cold_pv.put(self.detune_best_PV.get())
@@ -110,20 +112,6 @@ class ParkCavity(Cavity):
         print("Turning cavity and SSA off")
         self.turnOff()
         self.ssa.turnOff()
-    
-    def setup(self, count_current):
-        self.check_abort()
-        self.setup_tuning()
-        self.check_abort()
-        
-        print(f"Setting tune config for {self} to Other")
-        self.tune_config_pv.put(TUNE_CONFIG_OTHER_VALUE)
-        
-        if not count_current:
-            print(f"Resetting {self} stepper signed count")
-            while self.steppertuner.step_signed_pv.get() != 0:
-                self.steppertuner.reset_signed_pv.put(1, wait=True)
-        self.check_abort()
 
 
 PARK_CRYOMODULES: Dict[str, Cryomodule] = CryoDict(cavityClass=ParkCavity,
