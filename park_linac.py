@@ -84,6 +84,7 @@ class ParkCavity(Cavity):
             self.ssa.turnOff()
             return
         
+        self.turnOff()
         self.setup(count_current)
         
         df_cold = self.df_cold_pv.get()
@@ -93,7 +94,7 @@ class ParkCavity(Cavity):
             print(f"Tuning {self} to {df_cold} Hz")
             starting_config = self.tune_config_pv.get()
             self.auto_tune(des_detune=df_cold, config_val=TUNE_CONFIG_COLD_VALUE,
-                           chirp_range=chirp_range)
+                           chirp_range=chirp_range, tolerance=1000)
             if starting_config == TUNE_CONFIG_RESONANCE_VALUE:
                 print(f"Updating stored steps to cold landing to current step count for {self}")
                 self.steppertuner.nsteps_cold_pv.put(self.steppertuner.step_tot_pv.get())
@@ -113,17 +114,6 @@ class ParkCavity(Cavity):
     def setup(self, count_current):
         self.check_abort()
         self.setup_tuning()
-        self.check_abort()
-        
-        if self.detune_best_PV.severity != 3:
-            curr_detune = self.detune_best_PV.get()
-            if curr_detune and abs(curr_detune) < 150000:
-                self.set_chirp_range(200000)
-            else:
-                self.set_chirp_range(400000)
-        
-        else:
-            self.set_chirp_range(200000)
         self.check_abort()
         
         print(f"Setting tune config for {self} to Other")
