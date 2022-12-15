@@ -58,27 +58,27 @@ class CavityObject(QObject):
         
         readbacks: QFormLayout = QFormLayout()
         
-        self.detune_readback: PyDMLabel = PyDMLabel(init_channel=self.cavity.detune_best_PV.pvname)
+        self.detune_readback: PyDMLabel = PyDMLabel(init_channel=self.cavity.detune_best_PV.name)
         self.detune_readback.alarmSensitiveContent = True
         self.detune_readback.showUnits = True
         
-        cold_steps: PyDMLabel = PyDMLabel(init_channel=self.cavity.steppertuner.nsteps_cold_pv.pvname)
+        cold_steps: PyDMLabel = PyDMLabel(init_channel=self.cavity.steppertuner.nsteps_cold_pv.name)
         cold_steps.alarmSensitiveContent = True
         cold_steps.showUnits = True
         
-        park_steps: PyDMLabel = PyDMLabel(init_channel=self.cavity.steppertuner.nsteps_park_pv.pvname)
+        park_steps: PyDMLabel = PyDMLabel(init_channel=self.cavity.steppertuner.nsteps_park_pv.name)
         park_steps.alarmSensitiveContent = True
         park_steps.showUnits = True
         
-        freq_cold: PyDMLabel = PyDMLabel(init_channel=self.cavity.df_cold_pv.pvname)
+        freq_cold: PyDMLabel = PyDMLabel(init_channel=self.cavity.df_cold_pv.name)
         freq_cold.alarmSensitiveContent = True
         freq_cold.showUnits = True
         
-        step_readback: PyDMLabel = PyDMLabel(init_channel=self.cavity.steppertuner.step_signed_pv.pvname)
+        step_readback: PyDMLabel = PyDMLabel(init_channel=self.cavity.steppertuner.step_signed_pv.name)
         step_readback.alarmSensitiveContent = True
         step_readback.showUnits = True
         
-        config_label = PyDMLabel(init_channel=self.cavity.tune_config_pv.pvname)
+        config_label = PyDMLabel(init_channel=self.cavity.tune_config_pv.name)
         config_label.alarmSensitiveContent = True
         config_label.showUnits = True
         
