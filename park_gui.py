@@ -1,5 +1,6 @@
 from typing import Dict
 
+import pyca
 from PyQt5.QtCore import QObject, QRunnable, QThreadPool, pyqtSlot
 from PyQt5.QtWidgets import QCheckBox, QFormLayout, QGridLayout, QGroupBox, QLabel, QPushButton, QVBoxLayout, QWidget
 from lcls_tools.common.pydm_tools.displayUtils import WorkerSignals
@@ -24,7 +25,7 @@ class ColdWorker(QRunnable):
         try:
             self.cavity.move_to_cold_landing(count_current=self.count_current)
             self.signals.finished.emit("Cavity at cold landing")
-        except (StepperAbortError, StepperError) as e:
+        except (StepperAbortError, StepperError, pyca.pyexc) as e:
             self.cavity.steppertuner.abort_flag = False
             self.signals.error.emit(str(e))
 
