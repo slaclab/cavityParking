@@ -19,12 +19,14 @@ class ParkStepper(StepperTuner):
     def nsteps_park_pv(self) -> PV:
         if not self._nsteps_park_pv:
             self._nsteps_park_pv = PV(self.pvPrefix + "NSTEPS_PARK")
+            self._nsteps_park_pv.connect()
         return self._nsteps_park_pv
     
     @property
     def nsteps_cold_pv(self) -> PV:
         if not self._nsteps_cold_pv:
             self._nsteps_cold_pv = PV(self.pvPrefix + "NSTEPS_COLD")
+            self._nsteps_cold_pv.connect()
         return self._nsteps_cold_pv
     
     def move_to_cold_landing(self, count_current: bool):
