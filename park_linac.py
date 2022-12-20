@@ -86,7 +86,7 @@ class ParkCavity(Cavity):
     
     def move_to_cold_landing(self, count_current: bool):
         
-        if self.tune_config_pv.get(timeout=None) == TUNE_CONFIG_COLD_VALUE:
+        if self.tune_config_pv.get(timeout=5) == TUNE_CONFIG_COLD_VALUE:
             print(f"{self} at cold landing")
             print(f"Turning {self} and SSA off")
             self.turnOff()
