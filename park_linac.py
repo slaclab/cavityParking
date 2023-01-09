@@ -1,10 +1,10 @@
 from typing import Dict
 
+from lcls_tools.common.pyepics_tools.pyepicsUtils import PV
 from lcls_tools.superconducting.scLinac import (Cavity, CryoDict, Cryomodule, Piezo, SSA, StepperTuner)
 from lcls_tools.superconducting.scLinacUtils import (MAX_STEPPER_SPEED, StepperAbortError, TUNE_CONFIG_COLD_VALUE,
                                                      TUNE_CONFIG_PARKED_VALUE,
                                                      TUNE_CONFIG_RESONANCE_VALUE)
-from psp.Pv import Pv as PV
 
 PARK_DETUNE = 10000
 
