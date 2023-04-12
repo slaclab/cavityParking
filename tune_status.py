@@ -1,6 +1,6 @@
 from csv import DictWriter
 
-from lcls_tools.superconducting.scLinac import L0B
+from lcls_tools.superconducting.scLinac import ALL_CRYOMODULES
 
 from park_linac import PARK_CRYOMODULES
 
@@ -10,7 +10,7 @@ with open('cavity_status.csv', 'w', newline='') as csvfile:
     writer = DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
     
-    for cm_name in L0B:
+    for cm_name in ALL_CRYOMODULES:
         cm_object = PARK_CRYOMODULES[cm_name]
         for cavity_number, cavity in cm_object.cavities.items():
             writer.writerow({'Cryomodule'           : cm_object.name,
