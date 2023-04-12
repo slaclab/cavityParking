@@ -2,8 +2,8 @@ from typing import Dict
 
 import pyca
 from PyQt5.QtCore import QObject, pyqtSlot
-from PyQt5.QtWidgets import QCheckBox, QFormLayout, QGridLayout, QGroupBox, QLabel, QPushButton, \
-    QVBoxLayout, QWidget
+from PyQt5.QtWidgets import (QCheckBox, QFormLayout, QGridLayout, QGroupBox, QLabel, QPushButton,
+                             QVBoxLayout, QWidget)
 from lcls_tools.common.pydm_tools.displayUtils import WorkerSignals
 from lcls_tools.superconducting.scLinac import ALL_CRYOMODULES
 from lcls_tools.superconducting.scLinacUtils import StepperAbortError, StepperError
