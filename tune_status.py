@@ -17,4 +17,4 @@ with open('cavity_status.csv', 'w', newline='') as csvfile:
                              'Cavity'               : cavity_number,
                              'Tune Config'          : cavity.tune_config_pv.get(as_string=True),
                              'Steps to Cold Landing': cavity.steppertuner.steps_cold_landing_pv.get(),
-                             'DF Cold'              : cavity.df_cold_pv.get()})
+                             'DF Cold'              : cavity.df_cold_pv_obj.get()})

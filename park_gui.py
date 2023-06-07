@@ -1,12 +1,12 @@
 from typing import Dict
 
-import pyca
 from PyQt5.QtCore import QObject, pyqtSlot
-from PyQt5.QtWidgets import (QCheckBox, QFormLayout, QGridLayout, QGroupBox, QLabel, QPushButton,
-                             QVBoxLayout, QWidget)
+from PyQt5.QtWidgets import (QCheckBox, QFormLayout, QGridLayout, QGroupBox,
+                             QLabel, QPushButton, QVBoxLayout, QWidget)
 from lcls_tools.common.pydm_tools.displayUtils import WorkerSignals
-from lcls_tools.superconducting.scLinac import ALL_CRYOMODULES
-from lcls_tools.superconducting.scLinacUtils import StepperAbortError, StepperError
+from lcls_tools.superconducting.sc_linac_utils import (StepperAbortError,
+                                                       StepperError,
+                                                       ALL_CRYOMODULES)
 from pydm import Display
 from pydm.widgets import PyDMLabel
 
@@ -30,15 +30,15 @@ class CavityObject(QObject):
         self.detune_readback.alarmSensitiveContent = True
         self.detune_readback.showUnits = True
         
-        cold_steps: PyDMLabel = PyDMLabel(init_channel=self.cavity.steppertuner.nsteps_cold_pv.pvname)
+        cold_steps: PyDMLabel = PyDMLabel(init_channel=self.cavity.steppertuner.nsteps_cold_pv_obj.pvname)
         cold_steps.alarmSensitiveContent = True
         cold_steps.showUnits = True
         
-        park_steps: PyDMLabel = PyDMLabel(init_channel=self.cavity.steppertuner.nsteps_park_pv.pvname)
+        park_steps: PyDMLabel = PyDMLabel(init_channel=self.cavity.steppertuner.nsteps_park_pv_obj.pvname)
         park_steps.alarmSensitiveContent = True
         park_steps.showUnits = True
         
-        freq_cold: PyDMLabel = PyDMLabel(init_channel=self.cavity.df_cold_pv.pvname)
+        freq_cold: PyDMLabel = PyDMLabel(init_channel=self.cavity.df_cold_pv_obj.pvname)
         freq_cold.alarmSensitiveContent = True
         freq_cold.showUnits = True
         
@@ -46,7 +46,7 @@ class CavityObject(QObject):
         step_readback.alarmSensitiveContent = True
         step_readback.showUnits = True
         
-        config_label = PyDMLabel(init_channel=self.cavity.tune_config_pv.pvname)
+        config_label = PyDMLabel(init_channel=self.cavity.tune_config_pv)
         config_label.alarmSensitiveContent = True
         config_label.showUnits = True
         
@@ -114,7 +114,7 @@ class CavityObject(QObject):
             self.cavity.move_to_cold_landing(count_current=self.count_signed_steps.isChecked())
             self.signals.finished.emit("Cavity at cold landing")
             self.enable_buttons()
-        except (StepperAbortError, StepperError, pyca.pyexc) as e:
+        except (StepperAbortError, StepperError) as e:
             self.cavity.steppertuner.abort_flag = False
             self.signals.error.emit(str(e))
             self.enable_buttons()
@@ -170,6 +170,7 @@ class ParkGUI(Display):
         super().__init__(parent=parent, args=args)
         
         for cm_name in ALL_CRYOMODULES:
+            print(f"Creating {cm_name} tab")
             cm_obj = CryomoduleObject(name=cm_name, parent=self)
             self.ui.tabWidget.addTab(cm_obj.page, cm_name)
     
