@@ -16,8 +16,8 @@ def move_steps_park(cm_list: List[str]):
     for cm_name in cm_list:
         cryomodule: Cryomodule = PARK_CRYOMODULES[cm_name]
         for cavity in cryomodule.cavities.values():
-            cavity.steppertuner.nsteps_cold_pv.put(cavity.steppertuner.nsteps_park_pv.value,
-                                                   wait=True)
+            cavity.steppertuner.nsteps_cold_pv_obj.put(cavity.steppertuner.nsteps_park_pv_obj.value,
+                                                       wait=True)
 
 
 def pull_cold_frequencies(start_time: datetime, end_time: datetime, cm_list: List[str]):
@@ -42,7 +42,7 @@ def pull_cold_frequencies(start_time: datetime, end_time: datetime, cm_list: Lis
                 continue
             
             # print(cavity.df_cold_pv, df_cold, 1.3e9 + df_cold)
-            caput(cavity.df_cold_pv, df_cold, wait=True)
+            caput(cavity.df_cold_pv_obj, df_cold, wait=True)
 
 
 if __name__ == "__main__":

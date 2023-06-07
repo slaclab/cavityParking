@@ -1,50 +1,16 @@
 from typing import Dict
 
-from PyQt5.QtCore import QObject, QRunnable, QThreadPool, pyqtSlot
-from PyQt5.QtWidgets import QCheckBox, QFormLayout, QGridLayout, QGroupBox, QLabel, QPushButton, QVBoxLayout, QWidget
+from PyQt5.QtCore import QObject, pyqtSlot
+from PyQt5.QtWidgets import (QCheckBox, QFormLayout, QGridLayout, QGroupBox,
+                             QLabel, QPushButton, QVBoxLayout, QWidget)
 from lcls_tools.common.pydm_tools.displayUtils import WorkerSignals
-from lcls_tools.superconducting.scLinac import ALL_CRYOMODULES
-from lcls_tools.superconducting.scLinacUtils import StepperAbortError, StepperError
+from lcls_tools.superconducting.sc_linac_utils import (StepperAbortError,
+                                                       StepperError,
+                                                       ALL_CRYOMODULES)
 from pydm import Display
 from pydm.widgets import PyDMLabel
 
 from park_linac import PARK_CRYOMODULES, ParkCavity
-
-
-class ColdWorker(QRunnable):
-    def __init__(self, cavity: ParkCavity, label: QLabel, count_current: bool):
-        super().__init__()
-        self.cavity = cavity
-        self.signals = WorkerSignals(label)
-        self.count_current = count_current
-    
-    @pyqtSlot()
-    def run(self) -> None:
-        self.signals.status.emit("Moving to cold landing")
-        try:
-            self.cavity.move_to_cold_landing(count_current=self.count_current)
-            self.signals.finished.emit("Cavity at cold landing")
-        except (StepperAbortError, StepperError) as e:
-            self.cavity.steppertuner.abort_flag = False
-            self.signals.error.emit(str(e))
-
-
-class ParkWorker(QRunnable):
-    def __init__(self, cavity: ParkCavity, label: QLabel, count_current: bool):
-        super().__init__()
-        self.cavity = cavity
-        self.signals = WorkerSignals(label)
-        self.count_current = count_current
-    
-    @pyqtSlot()
-    def run(self) -> None:
-        self.signals.status.emit("Parking")
-        try:
-            self.cavity.park(self.count_current)
-            self.signals.finished.emit("Cavity Parked")
-        except StepperAbortError as e:
-            self.cavity.steppertuner.abort_flag = False
-            self.signals.error.emit(str(e))
 
 
 class CavityObject(QObject):
@@ -54,31 +20,33 @@ class CavityObject(QObject):
         self.cm_name = cm
         self.num = num
         self._cavity: ParkCavity = None
+        
         self.label = QLabel("Ready")
+        self.signals = WorkerSignals(self.label)
         
         readbacks: QFormLayout = QFormLayout()
         
-        self.detune_readback: PyDMLabel = PyDMLabel(init_channel=self.cavity.detune_best_PV.pvname)
+        self.detune_readback: PyDMLabel = PyDMLabel(init_channel=self.cavity.detune_best_pv)
         self.detune_readback.alarmSensitiveContent = True
         self.detune_readback.showUnits = True
         
-        cold_steps: PyDMLabel = PyDMLabel(init_channel=self.cavity.steppertuner.nsteps_cold_pv.pvname)
+        cold_steps: PyDMLabel = PyDMLabel(init_channel=self.cavity.steppertuner.nsteps_cold_pv)
         cold_steps.alarmSensitiveContent = True
         cold_steps.showUnits = True
         
-        park_steps: PyDMLabel = PyDMLabel(init_channel=self.cavity.steppertuner.nsteps_park_pv.pvname)
+        park_steps: PyDMLabel = PyDMLabel(init_channel=self.cavity.steppertuner.nsteps_park_pv)
         park_steps.alarmSensitiveContent = True
         park_steps.showUnits = True
         
-        freq_cold: PyDMLabel = PyDMLabel(init_channel=self.cavity.df_cold_pv.pvname)
+        freq_cold: PyDMLabel = PyDMLabel(init_channel=self.cavity.df_cold_pv)
         freq_cold.alarmSensitiveContent = True
         freq_cold.showUnits = True
         
-        step_readback: PyDMLabel = PyDMLabel(init_channel=self.cavity.steppertuner.step_signed_pv.pvname)
+        step_readback: PyDMLabel = PyDMLabel(init_channel=self.cavity.steppertuner.step_signed_pv)
         step_readback.alarmSensitiveContent = True
         step_readback.showUnits = True
         
-        config_label = PyDMLabel(init_channel=self.cavity.tune_config_pv.pvname)
+        config_label = PyDMLabel(init_channel=self.cavity.tune_config_pv)
         config_label.alarmSensitiveContent = True
         config_label.showUnits = True
         
@@ -90,13 +58,13 @@ class CavityObject(QObject):
         readbacks.addRow("Tune Config", config_label)
         
         self.cold_button: QPushButton = QPushButton("Move to Cold Landing")
-        self.cold_button.clicked.connect(self.launch_cold_worker)
+        self.cold_button.clicked.connect(self.move_to_cold_landing)
         self.cold_button.setToolTip("If 'Cold Landing Detune' is nonzero,"
                                     " it will autotune to that frequency. "
                                     "Else, it will blindly move 'Steps to Park' steps")
         
         self.park_button: QPushButton = QPushButton("Park")
-        self.park_button.clicked.connect(self.launch_park_worker)
+        self.park_button.clicked.connect(self.park)
         self.park_button.setToolTip("This will move the tuner until the detune is 10kHz")
         
         self.abort_button: QPushButton = QPushButton("Abort")
@@ -125,24 +93,44 @@ class CavityObject(QObject):
             self._cavity = PARK_CRYOMODULES[self.cm_name].cavities[self.num]
         return self._cavity
     
+    def disable_buttons(self):
+        self.park_button.setEnabled(False)
+        self.cold_button.setEnabled(False)
+    
+    def enable_buttons(self):
+        self.park_button.setEnabled(True)
+        self.cold_button.setEnabled(True)
+    
     def kill_worker(self):
         print("Aborting stepper move request")
         self.cavity.steppertuner.abort_pv.put(1, wait=True)
         self.cavity.steppertuner.abort_flag = True
     
-    def launch_cold_worker(self):
-        print("launching cold landing worker")
-        cold_worker = ColdWorker(cavity=self.cavity, label=self.label,
-                                 count_current=self.count_signed_steps.isChecked())
-        self.parent().threadpool.start(cold_worker)
-        print(f"Active thread count: {self.parent().threadpool.activeThreadCount()}")
+    @pyqtSlot()
+    def move_to_cold_landing(self):
+        self.disable_buttons()
+        self.signals.status.emit("Moving to cold landing")
+        try:
+            self.cavity.move_to_cold_landing(count_current=self.count_signed_steps.isChecked())
+            self.signals.finished.emit("Cavity at cold landing")
+            self.enable_buttons()
+        except (StepperAbortError, StepperError) as e:
+            self.cavity.steppertuner.abort_flag = False
+            self.signals.error.emit(str(e))
+            self.enable_buttons()
     
-    def launch_park_worker(self):
-        print("launching park worker")
-        park_worker = ParkWorker(cavity=self.cavity, label=self.label,
-                                 count_current=self.count_signed_steps.isChecked())
-        self.parent().threadpool.start(park_worker)
-        print(f"Active thread count: {self.parent().threadpool.activeThreadCount()}")
+    @pyqtSlot()
+    def park(self):
+        self.disable_buttons()
+        self.signals.status.emit("Parking")
+        try:
+            self.cavity.park(self.count_signed_steps.isChecked())
+            self.signals.finished.emit("Cavity Parked")
+            self.enable_buttons()
+        except StepperAbortError as e:
+            self.cavity.steppertuner.abort_flag = False
+            self.signals.error.emit(str(e))
+            self.enable_buttons()
 
 
 class CryomoduleObject(QObject):
@@ -174,16 +162,15 @@ class CryomoduleObject(QObject):
     @pyqtSlot()
     def move_cavities_to_cold(self):
         for cav_obj in self.cav_objects.values():
-            cav_obj.launch_cold_worker()
+            cav_obj.move_to_cold_landing()
 
 
 class ParkGUI(Display):
     def __init__(self, parent=None, args=None):
         super().__init__(parent=parent, args=args)
-        self.threadpool = QThreadPool()
-        print(f"Max thread count: {self.threadpool.maxThreadCount()}")
         
         for cm_name in ALL_CRYOMODULES:
+            print(f"Creating {cm_name} tab")
             cm_obj = CryomoduleObject(name=cm_name, parent=self)
             self.ui.tabWidget.addTab(cm_obj.page, cm_name)
     
