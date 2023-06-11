@@ -75,7 +75,7 @@ class ParkCavity(Cavity):
         
         if not count_current:
             print(f"Resetting {self} stepper signed count")
-            self.steppertuner.reset_signed_pv.put(1)
+            self.steppertuner.reset_signed_steps()
         
         if self.detune_best < PARK_DETUNE:
             self.auto_tune(des_detune=PARK_DETUNE,
@@ -101,7 +101,7 @@ class ParkCavity(Cavity):
         
         if not count_current:
             print(f"Resetting {self} stepper signed count")
-            self.steppertuner.reset_signed_pv.put(0)
+            self.steppertuner.reset_signed_steps()
         
         df_cold = self.df_cold_pv_obj.get()
         if df_cold:
