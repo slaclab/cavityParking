@@ -104,6 +104,7 @@ class ParkCavity(Cavity):
             self.steppertuner.reset_signed_steps()
         
         df_cold = self.df_cold_pv_obj.get()
+        
         if df_cold:
             chirp_range = abs(df_cold) + 50000
             print(f"Tuning {self} to {df_cold} Hz")
