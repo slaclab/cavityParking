@@ -4,7 +4,7 @@ from PyQt5.QtCore import QRunnable
 from PyQt5.QtWidgets import QCheckBox, QLabel, QPushButton
 from epics.ca import withInitialContext
 from lcls_tools.common.pydm_tools.displayUtils import WorkerSignals
-from lcls_tools.superconducting.sc_linac_utils import CavityAbortError, StepperAbortError, StepperError
+from lcls_tools.superconducting.sc_linac_utils import CavityAbortError, DetuneError, StepperAbortError, StepperError
 
 from park_linac import ParkCavity
 
@@ -40,7 +40,7 @@ class ColdWorker(QRunnable):
         try:
             self.cavity.move_to_cold_landing(count_current=self.count_signed_steps.isChecked())
             self.signals.finished.emit("Cavity at cold landing")
-        except (StepperAbortError, StepperError, CavityAbortError) as e:
+        except (StepperAbortError, StepperError, CavityAbortError, DetuneError) as e:
             self.cavity.steppertuner.abort_flag = False
             self.cavity.abort_flag = False
             self.signals.error.emit(str(e))
