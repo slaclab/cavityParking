@@ -24,13 +24,15 @@ class ParkSignals(WorkerSignals):
 
 class ColdWorker(QRunnable):
     def __init__(self, cavity: ParkCavity, status_label: QLabel,
-                 park_button: QPushButton, cold_button: QPushButton):
+                 park_button: QPushButton, cold_button: QPushButton,
+                 count_signed_steps: bool):
         super().__init__()
         self.setAutoDelete(False)
         self.signals = ParkSignals(status_label=status_label,
                                    park_button=park_button,
                                    cold_button=cold_button)
         self.cavity: ParkCavity = cavity
+        self.count_signed_steps: bool = count_signed_steps
     
     @withInitialContext
     def run(self):
