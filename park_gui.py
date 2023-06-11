@@ -1,22 +1,22 @@
 from typing import Dict
 
-from PyQt5.QtCore import QObject, pyqtSlot
+from PyQt5.QtCore import QObject, QThreadPool, pyqtSlot
 from PyQt5.QtWidgets import (QCheckBox, QFormLayout, QGridLayout, QGroupBox,
                              QLabel, QPushButton, QVBoxLayout, QWidget)
 from lcls_tools.common.pydm_tools.displayUtils import WorkerSignals
-from lcls_tools.superconducting.sc_linac_utils import (StepperAbortError,
-                                                       StepperError,
-                                                       ALL_CRYOMODULES)
+from lcls_tools.superconducting.sc_linac_utils import (ALL_CRYOMODULES, StepperAbortError)
 from pydm import Display
 from pydm.widgets import PyDMLabel
 
 from park_linac import PARK_CRYOMODULES, ParkCavity
+from park_utils import ColdWorker
 
 
 class CavityObject(QObject):
     
     def __init__(self, cm: str, num: int, parent):
         super().__init__(parent=parent)
+        self.parent = parent
         self.cm_name = cm
         self.num = num
         self._cavity: ParkCavity = None
@@ -86,6 +86,11 @@ class CavityObject(QObject):
         self.vlayout.addWidget(self.abort_button)
         
         self.groupbox.setLayout(self.vlayout)
+        
+        self.cold_worker: ColdWorker = ColdWorker(cavity=self.cavity,
+                                                  status_label=self.label,
+                                                  park_button=self.park_button,
+                                                  cold_button=self.cold_button)
     
     @property
     def cavity(self):
@@ -105,19 +110,11 @@ class CavityObject(QObject):
         print("Aborting stepper move request")
         self.cavity.steppertuner.abort_pv.put(1, wait=True)
         self.cavity.steppertuner.abort_flag = True
+        self.cavity.abort_flag = True
     
     @pyqtSlot()
     def move_to_cold_landing(self):
-        self.disable_buttons()
-        self.signals.status.emit("Moving to cold landing")
-        try:
-            self.cavity.move_to_cold_landing(count_current=self.count_signed_steps.isChecked())
-            self.signals.finished.emit("Cavity at cold landing")
-            self.enable_buttons()
-        except (StepperAbortError, StepperError) as e:
-            self.cavity.steppertuner.abort_flag = False
-            self.signals.error.emit(str(e))
-            self.enable_buttons()
+        self.parent.threadpool.start(self.cold_worker)
     
     @pyqtSlot()
     def park(self):
@@ -168,6 +165,7 @@ class CryomoduleObject(QObject):
 class ParkGUI(Display):
     def __init__(self, parent=None, args=None):
         super().__init__(parent=parent, args=args)
+        self.threadpool: QThreadPool = QThreadPool()
         
         for cm_name in ALL_CRYOMODULES:
             print(f"Creating {cm_name} tab")
