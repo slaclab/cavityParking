@@ -70,7 +70,7 @@ class CavityObject(QObject):
         self.abort_button: QPushButton = QPushButton("Abort")
         self.abort_button.clicked.connect(self.kill_worker)
         
-        self.count_signed_steps: QCheckBox = QCheckBox("Count current steps toward total")
+        self.count_signed_steps: QCheckBox = QCheckBox("Continue (don't reset signed steps)")
         self.count_signed_steps.setChecked(False)
         self.count_signed_steps.setToolTip("If checked, program will not reset "
                                            "the step count and will instead "
