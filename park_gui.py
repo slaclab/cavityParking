@@ -91,7 +91,7 @@ class CavityObject(QObject):
                                                   status_label=self.label,
                                                   park_button=self.park_button,
                                                   cold_button=self.cold_button,
-                                                  count_signed_steps=False)
+                                                  count_signed_steps=self.count_signed_steps)
     
     @property
     def cavity(self):
@@ -115,7 +115,6 @@ class CavityObject(QObject):
     
     @pyqtSlot()
     def move_to_cold_landing(self):
-        self.cold_worker.count_signed_steps = self.count_signed_steps.isChecked()
         self.parent.threadpool.start(self.cold_worker)
     
     @pyqtSlot()
