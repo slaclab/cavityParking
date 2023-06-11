@@ -119,7 +119,7 @@ class ParkCavity(Cavity):
         
         print("Turning cavity and SSA off")
         self.turnOff()
-        self.ssa.turnOff()
+        self.ssa.turn_off()
 
 
 PARK_CRYOMODULES: Dict[str, Cryomodule] = CryoDict(cavityClass=ParkCavity,
