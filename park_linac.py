@@ -2,9 +2,13 @@ from typing import Dict
 
 from lcls_tools.common.pyepics_tools.pyepicsUtils import PV
 from lcls_tools.superconducting.scLinac import (Cavity, CryoDict, Cryomodule, Piezo, SSA, StepperTuner)
-from lcls_tools.superconducting.scLinacUtils import (MAX_STEPPER_SPEED, TUNE_CONFIG_COLD_VALUE,
-                                                     TUNE_CONFIG_PARKED_VALUE,
-                                                     TUNE_CONFIG_RESONANCE_VALUE)
+from lcls_tools.superconducting.sc_linac_utils import (DetuneError,
+                                                       HW_MODE_MAINTENANCE_VALUE,
+                                                       HW_MODE_ONLINE_VALUE,
+                                                       MAX_STEPPER_SPEED,
+                                                       TUNE_CONFIG_COLD_VALUE,
+                                                       TUNE_CONFIG_PARKED_VALUE,
+                                                       TUNE_CONFIG_RESONANCE_VALUE)
 
 PARK_DETUNE = 10000
 
@@ -91,6 +95,9 @@ class ParkCavity(Cavity):
         self.ssa.turn_off()
     
     def move_to_cold_landing(self, count_current: bool):
+        
+        if self.hw_mode not in [HW_MODE_MAINTENANCE_VALUE, HW_MODE_ONLINE_VALUE]:
+            raise DetuneError(f"{self} not Online or in Maintenance")
         
         if self.tune_config_pv_obj.get() == TUNE_CONFIG_COLD_VALUE:
             print(f"{self} at cold landing")

@@ -109,7 +109,7 @@ class CavityObject(QObject):
     
     def kill_worker(self):
         print("Aborting stepper move request")
-        self.cavity.steppertuner.abort_pv.put(1, wait=True)
+        self.cavity.steppertuner.abort()
         self.cavity.steppertuner.abort_flag = True
         self.cavity.abort_flag = True
     
