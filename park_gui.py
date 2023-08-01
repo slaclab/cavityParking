@@ -91,7 +91,8 @@ class CavityObject(QObject):
                                                   status_label=self.label,
                                                   park_button=self.park_button,
                                                   cold_button=self.cold_button,
-                                                  count_signed_steps=self.count_signed_steps)
+                                                  count_signed_steps=self.count_signed_steps,
+                                                  freq_radiobutton=self.ui.freq_radiobutton)
     
     @property
     def cavity(self):
