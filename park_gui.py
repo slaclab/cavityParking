@@ -52,7 +52,10 @@ class CavityObject(QObject):
         
         readbacks.addRow("Live Detune", self.detune_readback)
         readbacks.addRow("Steps to Cold Landing", cold_steps)
-        readbacks.addRow("Steps to Park", park_steps)
+        
+        # TODO reintroduce when parking is necessary
+        # readbacks.addRow("Steps to Park", park_steps)
+        
         readbacks.addRow("Cold Landing Detune", freq_cold)
         readbacks.addRow("Live Total Step Count", step_readback)
         readbacks.addRow("Tune Config", config_label)
@@ -80,7 +83,10 @@ class CavityObject(QObject):
         self.vlayout = QVBoxLayout()
         self.vlayout.addWidget(self.count_signed_steps)
         self.vlayout.addWidget(self.cold_button)
-        self.vlayout.addWidget(self.park_button)
+        
+        # TODO reintroduce when parking is necessary
+        # self.vlayout.addWidget(self.park_button)
+        
         self.vlayout.addLayout(readbacks)
         self.vlayout.addWidget(self.label)
         self.vlayout.addWidget(self.abort_button)

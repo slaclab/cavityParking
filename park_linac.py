@@ -22,13 +22,13 @@ class ParkStepper(StepperTuner):
         self._nsteps_cold_pv_obj: PV = None
         
         self._step_signed_pv_obj: PV = None
-        self._steps_cold_landing_pv_ob: PV = None
+        self._steps_cold_landing_pv_obj: PV = None
     
     @property
     def steps_cold_landing_pv_obj(self) -> PV:
-        if not self._steps_cold_landing_pv_ob:
-            self._steps_cold_landing_pv_ob = PV(self.steps_cold_landing_pv)
-        return self._steps_cold_landing_pv_ob
+        if not self._steps_cold_landing_pv_obj:
+            self._steps_cold_landing_pv_obj = PV(self.steps_cold_landing_pv)
+        return self._steps_cold_landing_pv_obj
     
     @property
     def nsteps_park_pv_obj(self) -> PV:
@@ -131,7 +131,8 @@ class ParkCavity(Cavity):
                 self._auto_tune(delta_hz_func=delta_func, tolerance=1000,
                                 step_thresh=1.1)
             else:
-                print("No cold landing frequency recorded, moving npark steps instead")
+                print("No cold landing frequency recorded, moving by steps instead")
+                self.check_resonance()
                 abs_est_detune = abs(self.steppertuner.steps_cold_landing_pv_obj.get() / self.microsteps_per_hz)
                 self.setup_tuning(chirp_range=abs_est_detune + 50000)
                 self.steppertuner.move_to_cold_landing(count_current=count_current)
@@ -145,12 +146,14 @@ class ParkCavity(Cavity):
                                     HW_MODE_ONLINE_VALUE, HW_MODE_READY_VALUE]:
                 raise CavityHWModeError(f"{self} not Online, Maintenance, or Ready")
             
-            if self.tune_config_pv_obj.get() != TUNE_CONFIG_RESONANCE_VALUE:
-                raise CavityHWModeError(f"{self} not on resonance, not moving to cold landing by steps")
-            
+            self.check_resonance()
             self.steppertuner.move_to_cold_landing(count_current=count_current)
         
         self.tune_config_pv_obj.put(TUNE_CONFIG_COLD_VALUE)
+    
+    def check_resonance(self):
+        if self.tune_config_pv_obj.get() != TUNE_CONFIG_RESONANCE_VALUE:
+            raise CavityHWModeError(f"{self} not on resonance, not moving to cold landing by steps")
 
 
 PARK_CRYOMODULES: Dict[str, Cryomodule] = CryoDict(cavityClass=ParkCavity,
