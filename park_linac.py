@@ -119,6 +119,7 @@ class ParkCavity(Cavity):
                 def delta_func():
                     return self.detune_best - df_cold
                 
+                self.setup_tuning(use_sela=False, chirp_range=chirp_range)
                 self._auto_tune(delta_hz_func=delta_func, tolerance=1000,
                                 step_thresh=1.1)
             else:
