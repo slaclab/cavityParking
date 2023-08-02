@@ -72,6 +72,12 @@ class ParkCavity(Cavity):
         self._df_cold_pv_obj: PV = None
     
     @property
+    def hw_mode_str(self):
+        if not self._hw_mode_pv_obj:
+            self._hw_mode_pv_obj = PV(self.hw_mode_pv)
+        return self._hw_mode_pv_obj.get(as_string=True)
+    
+    @property
     def df_cold_pv_obj(self) -> PV:
         if not self._df_cold_pv_obj:
             self._df_cold_pv_obj = PV(self.df_cold_pv)
