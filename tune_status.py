@@ -1,6 +1,6 @@
 from csv import DictWriter
 
-from lcls_tools.superconducting.scLinac import ALL_CRYOMODULES
+from lcls_tools.superconducting.sc_linac_utils import ALL_CRYOMODULES
 
 from park_linac import PARK_CRYOMODULES
 
