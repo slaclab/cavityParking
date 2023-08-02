@@ -1,10 +1,13 @@
 from typing import Dict
 
-from lcls_tools.common.pyepics_tools.pyepicsUtils import PV
+from lcls_tools.common.pyepics_tools.pyepics_utils import PV
 from lcls_tools.superconducting.scLinac import (Cavity, CryoDict, Cryomodule, Piezo, SSA, StepperTuner)
-from lcls_tools.superconducting.scLinacUtils import (MAX_STEPPER_SPEED, TUNE_CONFIG_COLD_VALUE,
-                                                     TUNE_CONFIG_PARKED_VALUE,
-                                                     TUNE_CONFIG_RESONANCE_VALUE)
+from lcls_tools.superconducting.sc_linac_utils import (CavityHWModeError, HW_MODE_MAINTENANCE_VALUE,
+                                                       HW_MODE_ONLINE_VALUE,
+                                                       HW_MODE_READY_VALUE, MAX_STEPPER_SPEED,
+                                                       TUNE_CONFIG_COLD_VALUE,
+                                                       TUNE_CONFIG_PARKED_VALUE,
+                                                       TUNE_CONFIG_RESONANCE_VALUE)
 
 PARK_DETUNE = 10000
 
@@ -19,6 +22,13 @@ class ParkStepper(StepperTuner):
         self._nsteps_cold_pv_obj: PV = None
         
         self._step_signed_pv_obj: PV = None
+        self._steps_cold_landing_pv_obj: PV = None
+    
+    @property
+    def steps_cold_landing_pv_obj(self) -> PV:
+        if not self._steps_cold_landing_pv_obj:
+            self._steps_cold_landing_pv_obj = PV(self.steps_cold_landing_pv)
+        return self._steps_cold_landing_pv_obj
     
     @property
     def nsteps_park_pv_obj(self) -> PV:
@@ -90,7 +100,7 @@ class ParkCavity(Cavity):
         self.turnOff()
         self.ssa.turn_off()
     
-    def move_to_cold_landing(self, count_current: bool):
+    def move_to_cold_landing(self, count_current: bool, use_freq=True):
         
         if self.tune_config_pv_obj.get() == TUNE_CONFIG_COLD_VALUE:
             print(f"{self} at cold landing")
@@ -103,24 +113,47 @@ class ParkCavity(Cavity):
             print(f"Resetting {self} stepper signed count")
             self.steppertuner.reset_signed_steps()
         
-        df_cold = self.df_cold_pv_obj.get()
+        if use_freq:
+            
+            if self.hw_mode not in [HW_MODE_MAINTENANCE_VALUE, HW_MODE_ONLINE_VALUE]:
+                raise CavityHWModeError(f"{self} not Online or in Maintenance")
+            
+            df_cold = self.df_cold_pv_obj.get()
+            
+            if df_cold:
+                chirp_range = abs(df_cold) + 50000
+                print(f"Tuning {self} to {df_cold} Hz")
+                
+                def delta_func():
+                    return self.detune_best - df_cold
+                
+                self.setup_tuning(use_sela=False, chirp_range=chirp_range)
+                self._auto_tune(delta_hz_func=delta_func, tolerance=1000,
+                                step_thresh=1.1)
+            else:
+                print("No cold landing frequency recorded, moving by steps instead")
+                self.check_resonance()
+                abs_est_detune = abs(self.steppertuner.steps_cold_landing_pv_obj.get() / self.microsteps_per_hz)
+                self.setup_tuning(chirp_range=abs_est_detune + 50000)
+                self.steppertuner.move_to_cold_landing(count_current=count_current)
+            
+            print("Turning cavity and SSA off")
+            self.turnOff()
+            self.ssa.turn_off()
         
-        if df_cold:
-            chirp_range = abs(df_cold) + 50000
-            print(f"Tuning {self} to {df_cold} Hz")
-            self.auto_tune(des_detune=df_cold, config_val=TUNE_CONFIG_COLD_VALUE,
-                           chirp_range=chirp_range, tolerance=1000)
         else:
-            print("No cold landing frequency recorded, moving npark steps instead")
-            abs_est_detune = abs(self.steppertuner.steps_cold_landing_pv.get() / self.steps_per_hz)
-            self.setup_tuning(chirp_range=abs_est_detune + 50000)
+            if self.hw_mode not in [HW_MODE_MAINTENANCE_VALUE,
+                                    HW_MODE_ONLINE_VALUE, HW_MODE_READY_VALUE]:
+                raise CavityHWModeError(f"{self} not Online, Maintenance, or Ready")
+            
+            self.check_resonance()
             self.steppertuner.move_to_cold_landing(count_current=count_current)
-            self.tune_config_pv_obj.put(TUNE_CONFIG_COLD_VALUE)
-            self.df_cold_pv_obj.put(self.detune_best)
         
-        print("Turning cavity and SSA off")
-        self.turnOff()
-        self.ssa.turn_off()
+        self.tune_config_pv_obj.put(TUNE_CONFIG_COLD_VALUE)
+    
+    def check_resonance(self):
+        if self.tune_config_pv_obj.get() != TUNE_CONFIG_RESONANCE_VALUE:
+            raise CavityHWModeError(f"{self} not on resonance, not moving to cold landing by steps")
 
 
 PARK_CRYOMODULES: Dict[str, Cryomodule] = CryoDict(cavityClass=ParkCavity,

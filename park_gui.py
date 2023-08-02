@@ -52,7 +52,10 @@ class CavityObject(QObject):
         
         readbacks.addRow("Live Detune", self.detune_readback)
         readbacks.addRow("Steps to Cold Landing", cold_steps)
-        readbacks.addRow("Steps to Park", park_steps)
+        
+        # TODO reintroduce when parking is necessary
+        # readbacks.addRow("Steps to Park", park_steps)
+        
         readbacks.addRow("Cold Landing Detune", freq_cold)
         readbacks.addRow("Live Total Step Count", step_readback)
         readbacks.addRow("Tune Config", config_label)
@@ -70,7 +73,7 @@ class CavityObject(QObject):
         self.abort_button: QPushButton = QPushButton("Abort")
         self.abort_button.clicked.connect(self.kill_worker)
         
-        self.count_signed_steps: QCheckBox = QCheckBox("Count current steps toward total")
+        self.count_signed_steps: QCheckBox = QCheckBox("Continue (don't reset signed steps)")
         self.count_signed_steps.setChecked(False)
         self.count_signed_steps.setToolTip("If checked, program will not reset "
                                            "the step count and will instead "
@@ -80,7 +83,10 @@ class CavityObject(QObject):
         self.vlayout = QVBoxLayout()
         self.vlayout.addWidget(self.count_signed_steps)
         self.vlayout.addWidget(self.cold_button)
-        self.vlayout.addWidget(self.park_button)
+        
+        # TODO reintroduce when parking is necessary
+        # self.vlayout.addWidget(self.park_button)
+        
         self.vlayout.addLayout(readbacks)
         self.vlayout.addWidget(self.label)
         self.vlayout.addWidget(self.abort_button)
@@ -91,7 +97,8 @@ class CavityObject(QObject):
                                                   status_label=self.label,
                                                   park_button=self.park_button,
                                                   cold_button=self.cold_button,
-                                                  count_signed_steps=self.count_signed_steps)
+                                                  count_signed_steps=self.count_signed_steps,
+                                                  freq_radiobutton=self.parent.ui.freq_radiobutton)
     
     @property
     def cavity(self):
@@ -109,7 +116,7 @@ class CavityObject(QObject):
     
     def kill_worker(self):
         print("Aborting stepper move request")
-        self.cavity.steppertuner.abort_pv.put(1, wait=True)
+        self.cavity.steppertuner.abort()
         self.cavity.steppertuner.abort_flag = True
         self.cavity.abort_flag = True
     
