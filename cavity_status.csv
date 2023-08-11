@@ -8,7 +8,7 @@ Cryomodule,Cavity,Tune Config,Steps to Cold Landing,DF Cold,HW Mode
 01,7,On resonance,-16898000,90010,Online
 01,8,On resonance,-19624000,107163,Online
 02,1,On resonance,-43944000,226472,Online
-02,2,Other,-45279000,243883,Online
+02,2,On resonance,-45279000,243883,Online
 02,3,On resonance,-42568000,230226,Online
 02,4,On resonance,-61540000,293382,Online
 02,5,On resonance,-44652000,240435,Online
@@ -205,7 +205,7 @@ H2,8,On resonance,-16461775,-566951,Online
 24,4,On resonance,-19330000,105096,Online
 24,5,On resonance,-13625000,75041,Online
 24,6,On resonance,-22939800,126115,Online
-24,7,Other,-14400000,79471,Online
+24,7,On resonance,-14400000,79471,Online
 24,8,On resonance,-19930000,109401,Online
 25,1,On resonance,-1940000,10375,Online
 25,2,Other,-2737000,0,Offline
