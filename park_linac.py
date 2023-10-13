@@ -1,6 +1,6 @@
 from typing import Dict
 
-from lcls_tools.common.pyepics_tools.pyepics_utils import PV
+from lcls_tools.common.controls.pyepics.utils import PV
 from lcls_tools.superconducting.scLinac import (
     Cavity,
     CryoDict,
