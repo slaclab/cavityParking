@@ -66,7 +66,7 @@ class ParkStepper(StepperTuner):
         else:
             steps = recorded_steps
         print(f"Moving {steps} steps")
-        self.move(steps, maxSteps=steps, speed=MAX_STEPPER_SPEED)
+        self.move(steps, maxSteps=abs(steps), speed=MAX_STEPPER_SPEED)
 
     def park(self, count_current: bool):
         adjustment = self.step_signed_pv_obj.get() if count_current else 0
