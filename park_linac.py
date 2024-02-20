@@ -59,14 +59,19 @@ class ParkStepper(StepperTuner):
             self._step_signed_pv_obj = PV(self.step_signed_pv)
         return self._step_signed_pv_obj
 
-    def move_to_cold_landing(self, count_current: bool):
+    def move_to_cold_landing(self, count_current: bool, check_detune: bool = False):
         recorded_steps = self.nsteps_cold_pv_obj.get()
         if count_current:
             steps = recorded_steps - self.step_signed_pv_obj.get()
         else:
             steps = recorded_steps
         print(f"Moving {steps} steps")
-        self.move(steps, maxSteps=abs(steps), speed=MAX_STEPPER_SPEED)
+        self.move(
+            steps,
+            maxSteps=abs(steps),
+            speed=MAX_STEPPER_SPEED,
+            check_detune=check_detune,
+        )
 
     def park(self, count_current: bool):
         adjustment = self.step_signed_pv_obj.get() if count_current else 0
@@ -163,7 +168,9 @@ class ParkCavity(Cavity):
                     / self.microsteps_per_hz
                 )
                 self.setup_tuning(chirp_range=abs_est_detune + 50000)
-                self.steppertuner.move_to_cold_landing(count_current=count_current)
+                self.steppertuner.move_to_cold_landing(
+                    count_current=count_current, check_detune=True
+                )
 
             self.tune_config_pv_obj.put(TUNE_CONFIG_COLD_VALUE)
             print("Turning cavity and SSA off")
@@ -179,7 +186,14 @@ class ParkCavity(Cavity):
                 raise CavityHWModeError(f"{self} not Online, Maintenance, or Ready")
 
             self.check_resonance()
-            self.steppertuner.move_to_cold_landing(count_current=count_current)
+            # If we're not using frequency, it's likely that the cavity is neither
+            # on nor in chirp (so the detune check will fail and raise an
+            # exception before marking the cavity as at cold landing). This is
+            # likely the case when we have lost site power and the cryoplant is
+            # unable to support 2 K operation
+            self.steppertuner.move_to_cold_landing(
+                count_current=count_current, check_detune=False
+            )
 
         self.tune_config_pv_obj.put(TUNE_CONFIG_COLD_VALUE)
 
