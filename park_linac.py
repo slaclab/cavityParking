@@ -186,6 +186,11 @@ class ParkCavity(Cavity):
                 raise CavityHWModeError(f"{self} not Online, Maintenance, or Ready")
 
             self.check_resonance()
+            # If we're not using frequency, it's likely that the cavity is neither
+            # on nor in chirp (so the detune check will fail and raise an
+            # exception before marking the cavity as at cold landing). This is
+            # likely the case when we have lost site power and the cryoplant is
+            # unable to support 2 K operation
             self.steppertuner.move_to_cold_landing(
                 count_current=count_current, check_detune=False
             )
