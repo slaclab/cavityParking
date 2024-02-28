@@ -4,18 +4,28 @@ from lcls_tools.superconducting.sc_linac_utils import ALL_CRYOMODULES
 
 from park_linac import PARK_CRYOMODULES
 
-with open('cavity_status.csv', 'w', newline='') as csvfile:
-    fieldnames = ['Cryomodule', 'Cavity', 'Tune Config',
-                  'Steps to Cold Landing', 'DF Cold', 'HW Mode']
+CM_KEY = "Cryomodule"
+CAV_KEY = "Cavity"
+CONFIG_KEY = "Tune Config"
+STEPS_KEY = "Steps to Cold Landing"
+DF_COLD_KEY = "DF Cold"
+HW_MODE_KEY = "HW Mode"
+
+with open("cavity_status.csv", "w", newline="") as csvfile:
+    fieldnames = [CM_KEY, CAV_KEY, CONFIG_KEY, STEPS_KEY, DF_COLD_KEY, HW_MODE_KEY]
     writer = DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
-    
+
     for cm_name in ALL_CRYOMODULES:
         cm_object = PARK_CRYOMODULES[cm_name]
         for cavity_number, cavity in cm_object.cavities.items():
-            writer.writerow({'Cryomodule'           : cm_object.name,
-                             'Cavity'               : cavity_number,
-                             'Tune Config'          : cavity.tune_config_pv_obj.get(as_string=True),
-                             'Steps to Cold Landing': cavity.steppertuner.steps_cold_landing_pv_obj.get(),
-                             'DF Cold'              : int(cavity.df_cold_pv_obj.get()),
-                             'HW Mode'              : cavity.hw_mode_str})
+            writer.writerow(
+                {
+                    CM_KEY: cm_object.name,
+                    CAV_KEY: cavity_number,
+                    CONFIG_KEY: cavity.tune_config_pv_obj.get(as_string=True),
+                    DF_COLD_KEY: int(cavity.df_cold_pv_obj.get()),
+                    STEPS_KEY: cavity.steppertuner.steps_cold_landing_pv_obj.get(),
+                    HW_MODE_KEY: cavity.hw_mode_str,
+                }
+            )
