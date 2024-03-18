@@ -16,7 +16,7 @@ from lcls_tools.superconducting.sc_linac_utils import ALL_CRYOMODULES, StepperAb
 from pydm import Display
 from pydm.widgets import PyDMLabel
 
-from park_linac import PARK_CRYOMODULES, ParkCavity
+from park_linac import PARK_MACHINE, ParkCavity
 from park_utils import ColdWorker
 
 
@@ -128,7 +128,7 @@ class CavityObject(QObject):
     @property
     def cavity(self):
         if not self._cavity:
-            self._cavity = PARK_CRYOMODULES[self.cm_name].cavities[self.num]
+            self._cavity = PARK_MACHINE.cryomodules[self.cm_name].cavities[self.num]
         return self._cavity
 
     def disable_buttons(self):
