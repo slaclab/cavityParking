@@ -16,7 +16,7 @@ from lcls_tools.superconducting.sc_linac_utils import ALL_CRYOMODULES, StepperAb
 from pydm import Display
 from pydm.widgets import PyDMLabel
 
-from park_linac import PARK_CRYOMODULES, ParkCavity
+from park_linac import PARK_MACHINE, ParkCavity
 from park_utils import ColdWorker
 
 
@@ -40,13 +40,13 @@ class CavityObject(QObject):
         self.detune_readback.showUnits = True
 
         cold_steps: PyDMLabel = PyDMLabel(
-            init_channel=self.cavity.steppertuner.nsteps_cold_pv
+            init_channel=self.cavity.stepper_tuner.nsteps_cold_pv
         )
         cold_steps.alarmSensitiveContent = True
         cold_steps.showUnits = True
 
         park_steps: PyDMLabel = PyDMLabel(
-            init_channel=self.cavity.steppertuner.nsteps_park_pv
+            init_channel=self.cavity.stepper_tuner.nsteps_park_pv
         )
         park_steps.alarmSensitiveContent = True
         park_steps.showUnits = True
@@ -56,7 +56,7 @@ class CavityObject(QObject):
         freq_cold.showUnits = True
 
         step_readback: PyDMLabel = PyDMLabel(
-            init_channel=self.cavity.steppertuner.step_signed_pv
+            init_channel=self.cavity.stepper_tuner.step_signed_pv
         )
         step_readback.alarmSensitiveContent = True
         step_readback.showUnits = True
@@ -126,9 +126,9 @@ class CavityObject(QObject):
         )
 
     @property
-    def cavity(self):
+    def cavity(self) -> ParkCavity:
         if not self._cavity:
-            self._cavity = PARK_CRYOMODULES[self.cm_name].cavities[self.num]
+            self._cavity = PARK_MACHINE.cryomodules[self.cm_name].cavities[self.num]
         return self._cavity
 
     def disable_buttons(self):
@@ -141,8 +141,8 @@ class CavityObject(QObject):
 
     def kill_worker(self):
         print("Aborting stepper move request")
-        self.cavity.steppertuner.abort()
-        self.cavity.steppertuner.abort_flag = True
+        self.cavity.stepper_tuner.abort()
+        self.cavity.stepper_tuner.abort_flag = True
         self.cavity.abort_flag = True
 
     @pyqtSlot()
@@ -158,7 +158,7 @@ class CavityObject(QObject):
             self.signals.finished.emit("Cavity Parked")
             self.enable_buttons()
         except StepperAbortError as e:
-            self.cavity.steppertuner.abort_flag = False
+            self.cavity.stepper_tuner.abort_flag = False
             self.signals.error.emit(str(e))
             self.enable_buttons()
 

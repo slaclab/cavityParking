@@ -1,12 +1,7 @@
-from typing import Dict
-
 from lcls_tools.common.controls.pyepics.utils import PV
-from lcls_tools.superconducting.scLinac import (
+from lcls_tools.superconducting.sc_linac import (
     Cavity,
-    CryoDict,
-    Cryomodule,
-    Piezo,
-    SSA,
+    Machine,
     StepperTuner,
 )
 from lcls_tools.superconducting.sc_linac_utils import (
@@ -68,7 +63,7 @@ class ParkStepper(StepperTuner):
         print(f"Moving {steps} steps")
         self.move(
             steps,
-            maxSteps=abs(steps),
+            max_steps=abs(steps),
             speed=MAX_STEPPER_SPEED,
             check_detune=check_detune,
         )
@@ -82,13 +77,10 @@ class ParkStepper(StepperTuner):
 class ParkCavity(Cavity):
     def __init__(
         self,
-        cavityNum,
-        rackObject,
-        ssaClass=SSA,
-        stepperClass=ParkStepper,
-        piezoClass=Piezo,
+        cavity_num,
+        rack_object,
     ):
-        super().__init__(cavityNum, rackObject, stepperClass=ParkStepper)
+        super().__init__(cavity_num=cavity_num, rack_object=rack_object)
         self.df_cold_pv: str = self.pv_addr("DF_COLD")
         self._df_cold_pv_obj: PV = None
 
@@ -112,7 +104,7 @@ class ParkCavity(Cavity):
 
         if not count_current:
             print(f"Resetting {self} stepper signed count")
-            self.steppertuner.reset_signed_steps()
+            self.stepper_tuner.reset_signed_steps()
 
         if self.detune_best < PARK_DETUNE:
 
@@ -123,27 +115,27 @@ class ParkCavity(Cavity):
 
         if starting_config == TUNE_CONFIG_RESONANCE_VALUE:
             print(f"Updating stored steps to park to current step count for {self}")
-            self.steppertuner.nsteps_park_pv_obj.put(
-                self.steppertuner.step_tot_pv.get()
+            self.stepper_tuner.nsteps_park_pv_obj.put(
+                self.stepper_tuner.step_tot_pv_obj.get()
             )
 
         self.tune_config_pv_obj.put(TUNE_CONFIG_PARKED_VALUE)
 
         print("Turning cavity and SSA off")
-        self.turnOff()
+        self.turn_off()
         self.ssa.turn_off()
 
     def move_to_cold_landing(self, count_current: bool, use_freq=True):
         if self.tune_config_pv_obj.get() == TUNE_CONFIG_COLD_VALUE:
             print(f"{self} at cold landing")
             print(f"Turning {self} and SSA off")
-            self.turnOff()
+            self.turn_off()
             self.ssa.turn_off()
             return
 
         if not count_current:
             print(f"Resetting {self} stepper signed count")
-            self.steppertuner.reset_signed_steps()
+            self.stepper_tuner.reset_signed_steps()
 
         if use_freq:
             if self.hw_mode not in [HW_MODE_MAINTENANCE_VALUE, HW_MODE_ONLINE_VALUE]:
@@ -164,17 +156,17 @@ class ParkCavity(Cavity):
                 print("No cold landing frequency recorded, moving by steps instead")
                 self.check_resonance()
                 abs_est_detune = abs(
-                    self.steppertuner.steps_cold_landing_pv_obj.get()
+                    self.stepper_tuner.steps_cold_landing_pv_obj.get()
                     / self.microsteps_per_hz
                 )
                 self.setup_tuning(chirp_range=abs_est_detune + 50000)
-                self.steppertuner.move_to_cold_landing(
+                self.stepper_tuner.move_to_cold_landing(
                     count_current=count_current, check_detune=True
                 )
 
             self.tune_config_pv_obj.put(TUNE_CONFIG_COLD_VALUE)
             print("Turning cavity and SSA off")
-            self.turnOff()
+            self.turn_off()
             self.ssa.turn_off()
 
         else:
@@ -191,7 +183,7 @@ class ParkCavity(Cavity):
             # exception before marking the cavity as at cold landing). This is
             # likely the case when we have lost site power and the cryoplant is
             # unable to support 2 K operation
-            self.steppertuner.move_to_cold_landing(
+            self.stepper_tuner.move_to_cold_landing(
                 count_current=count_current, check_detune=False
             )
 
@@ -204,6 +196,4 @@ class ParkCavity(Cavity):
             )
 
 
-PARK_CRYOMODULES: Dict[str, Cryomodule] = CryoDict(
-    cavityClass=ParkCavity, stepperClass=ParkStepper
-)
+PARK_MACHINE = Machine(cavity_class=ParkCavity, stepper_class=ParkStepper)
