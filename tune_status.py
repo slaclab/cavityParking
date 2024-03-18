@@ -25,7 +25,7 @@ with open("cavity_status.csv", "w", newline="") as csvfile:
                     CAV_KEY: cavity_number,
                     CONFIG_KEY: cavity.tune_config_pv_obj.get(as_string=True),
                     DF_COLD_KEY: int(cavity.df_cold_pv_obj.get()),
-                    STEPS_KEY: cavity.steppertuner.steps_cold_landing_pv_obj.get(),
+                    STEPS_KEY: cavity.stepper_tuner.steps_cold_landing_pv_obj.get(),
                     HW_MODE_KEY: cavity.hw_mode_str,
                 }
             )
