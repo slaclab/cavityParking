@@ -64,6 +64,6 @@ class ColdWorker(QRunnable):
             DetuneError,
             CavityHWModeError,
         ) as e:
-            self.cavity.steppertuner.abort_flag = False
+            self.cavity.stepper_tuner.abort_flag = False
             self.cavity.abort_flag = False
             self.signals.error.emit(str(e))
