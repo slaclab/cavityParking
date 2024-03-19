@@ -26,7 +26,7 @@ Cryomodule,Cavity,Tune Config,Steps to Cold Landing,DF Cold,HW Mode
 H1,1,On resonance,-16567106,-692323,Online
 H1,2,On resonance,-19772902,-788753,Online
 H1,3,On resonance,-21964288,-857196,Online
-H1,4,Cold landing,-21755382,-808127,Offline
+H1,4,On resonance,-21755382,-808127,Maintenance
 H1,5,On resonance,-19524066,-849756,Online
 H1,6,On resonance,-18876567,-808282,Online
 H1,7,On resonance,-19071894,-855717,Online
@@ -34,7 +34,7 @@ H1,8,On resonance,-20662000,-831134,Online
 H2,1,On resonance,-18446963,-518369,Online
 H2,2,On resonance,-15680000,-574485,Online
 H2,3,On resonance,-16821000,-503460,Online
-H2,4,Cold landing,-17550000,-912236,Offline
+H2,4,On resonance,-17550000,-912236,Maintenance
 H2,5,On resonance,-21565008,-585711,Online
 H2,6,On resonance,-12576394,-519879,Online
 H2,7,On resonance,-18176679,-557619,Online
@@ -139,8 +139,8 @@ H2,8,On resonance,-16461775,-566951,Online
 16,2,On resonance,-13015000,71711,Online
 16,3,On resonance,-22450000,121535,Online
 16,4,On resonance,-10289000,55638,Online
-16,5,On resonance,-22110000,120140,Online
-16,6,On resonance,-27605000,151619,Offline
+16,5,On resonance,-22110000,120140,Offline
+16,6,On resonance,-27605000,151619,Online
 16,7,On resonance,-22769000,124613,Online
 16,8,On resonance,-13555000,73790,Online
 17,1,On resonance,-7765000,42427,Online
@@ -170,7 +170,7 @@ H2,8,On resonance,-16461775,-566951,Online
 20,1,On resonance,-17455000,93724,Online
 20,2,On resonance,-5155000,27820,Online
 20,3,On resonance,-16620000,90085,Online
-20,4,Cold landing,-25830000,140482,Offline
+20,4,On resonance,-25830000,140482,Online
 20,5,On resonance,-18643500,101966,Online
 20,6,On resonance,-27246000,147955,Online
 20,7,On resonance,-16203000,88098,Online
@@ -274,7 +274,7 @@ H2,8,On resonance,-16461775,-566951,Online
 33,1,On resonance,13647000,-74756,Online
 33,2,On resonance,-14457000,77546,Online
 33,3,On resonance,-35810000,192131,Online
-33,4,On resonance,-9575000,51865,Online
+33,4,Cold landing,-9575000,51865,Offline
 33,5,On resonance,-10960000,59194,Online
 33,6,On resonance,-31660000,170322,Online
 33,7,On resonance,-28650000,154066,Online
