@@ -46,7 +46,7 @@ H2,8,On resonance,-16461775,-566951,Online
 04,5,On resonance,-23600000,119009,Online
 04,6,On resonance,-31655000,167532,Online
 04,7,Cold landing,-69530000,0,Offline
-04,8,Other,-27574999,145298,Online
+04,8,On resonance,-27574999,145298,Online
 05,1,On resonance,-3010000,15675,Online
 05,2,On resonance,-5255000,28165,Online
 05,3,On resonance,-28539000,154334,Online
@@ -146,7 +146,7 @@ H2,8,On resonance,-16461775,-566951,Online
 17,1,On resonance,-7765000,42427,Online
 17,2,On resonance,-11688000,64178,Online
 17,3,On resonance,-4371000,23805,Online
-17,4,On resonance,-9447000,52014,Online
+17,4,On resonance,-9447000,52014,Offline
 17,5,On resonance,-2936000,15956,Online
 17,6,On resonance,-19273000,105071,Online
 17,7,On resonance,-25300000,139582,Online
@@ -221,7 +221,7 @@ H2,8,On resonance,-16461775,-566951,Online
 26,4,On resonance,-29747000,156034,Online
 26,5,On resonance,-2176000,11185,Online
 26,6,On resonance,-35120000,184941,Online
-26,7,On resonance,-26770000,142267,Online
+26,7,On resonance,-26770000,142267,Offline
 26,8,Cold landing,-1054000,0,Offline
 27,1,On resonance,-31020000,168305,Online
 27,2,On resonance,-46666000,227677,Online
@@ -255,8 +255,8 @@ H2,8,On resonance,-16461775,-566951,Online
 30,6,On resonance,-12646000,68291,Online
 30,7,On resonance,-11688000,63637,Online
 30,8,On resonance,-23155000,125224,Online
-31,1,On resonance,-28597000,153954,Online
-31,2,On resonance,-17375000,94071,Online
+31,1,On resonance,-28597000,153954,Offline
+31,2,On resonance,-17375000,94071,Offline
 31,3,On resonance,-13847000,74906,Online
 31,4,On resonance,-20422000,111997,Online
 31,5,On resonance,-16947000,92648,Online
