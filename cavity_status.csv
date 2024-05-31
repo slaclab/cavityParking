@@ -26,7 +26,7 @@ Cryomodule,Cavity,Tune Config,Steps to Cold Landing,DF Cold,HW Mode
 H1,1,On resonance,-16567106,-692323,Online
 H1,2,On resonance,-19772902,-788753,Online
 H1,3,On resonance,-21964288,-857196,Online
-H1,4,On resonance,-21755382,-808127,Maintenance
+H1,4,On resonance,-21755382,-808127,Offline
 H1,5,On resonance,-19524066,-849756,Online
 H1,6,On resonance,-18876567,-808282,Online
 H1,7,On resonance,-19071894,-855717,Online
@@ -34,10 +34,10 @@ H1,8,On resonance,-20662000,-831134,Online
 H2,1,On resonance,-18446963,-518369,Online
 H2,2,On resonance,-15680000,-574485,Online
 H2,3,On resonance,-16821000,-503460,Online
-H2,4,On resonance,-17550000,-912236,Maintenance
+H2,4,On resonance,-17550000,-912236,Offline
 H2,5,On resonance,-21565008,-585711,Online
 H2,6,On resonance,-12576394,-519879,Online
-H2,7,On resonance,-18176679,-557619,Online
+H2,7,Other,-18176679,-557619,Online
 H2,8,On resonance,-16461775,-566951,Online
 04,1,On resonance,-26667000,143277,Online
 04,2,On resonance,-29384000,158015,Online
@@ -187,7 +187,7 @@ H2,8,On resonance,-16461775,-566951,Online
 22,2,On resonance,-26137000,139982,Online
 22,3,On resonance,-24062000,128257,Online
 22,4,On resonance,-26439000,143230,Online
-22,5,On resonance,-7170000,38032,Online
+22,5,On resonance,-7170000,38032,Offline
 22,6,On resonance,-12510000,66663,Online
 22,7,On resonance,-12044000,65411,Online
 22,8,On resonance,-20393000,111659,Online
@@ -225,7 +225,7 @@ H2,8,On resonance,-16461775,-566951,Online
 26,8,Cold landing,-1054000,0,Offline
 27,1,On resonance,-31020000,168305,Online
 27,2,On resonance,-46666000,227677,Online
-27,3,On resonance,-38900000,213305,Online
+27,3,On resonance,-38900000,213305,Offline
 27,4,On resonance,-45226000,247664,Online
 27,5,On resonance,-35865956,195978,Online
 27,6,On resonance,-35210000,191396,Online
